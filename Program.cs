@@ -15,7 +15,8 @@ var connectionString =
     $"Port={Environment.GetEnvironmentVariable("DB_PORT")};" +
     $"Database={Environment.GetEnvironmentVariable("DB_NAME")};" +
     $"Username={Environment.GetEnvironmentVariable("DB_USER")};" +
-    $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD")};";
+    $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD")};" +
+    $"Ssl Mode={Environment.GetEnvironmentVariable("DB_SSL")};";
 
 
 builder.Services.AddCors(options =>
@@ -65,6 +66,12 @@ app.UseCors("AllowFrontend");
     app.UseSwagger();
     app.UseSwaggerUI();
 // }
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
