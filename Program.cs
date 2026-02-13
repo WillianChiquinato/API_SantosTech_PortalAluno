@@ -9,13 +9,13 @@ using API_PortalSantosTech.Services;
 DotNetEnv.Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseUrls("http://0.0.0.0:8080");
 var connectionString =
     $"Host={Environment.GetEnvironmentVariable("DB_SERVER")};" +
     $"Port={Environment.GetEnvironmentVariable("DB_PORT")};" +
     $"Database={Environment.GetEnvironmentVariable("DB_NAME")};" +
     $"Username={Environment.GetEnvironmentVariable("DB_USER")};" +
-    $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD")};" +
-    $"Ssl Mode={Environment.GetEnvironmentVariable("DB_SSL")};";
+    $"Password={Environment.GetEnvironmentVariable("DB_PASSWORD")};";
 
 
 builder.Services.AddCors(options =>
