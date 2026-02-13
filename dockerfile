@@ -15,4 +15,4 @@ COPY --from=build /publish .
 
 EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "API_PortalSantosTech.dll"]
+ENTRYPOINT ["dotnet", "API-PortalSantosTech.dll"]
