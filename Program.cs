@@ -9,11 +9,6 @@ using API_PortalSantosTech.Services;
 DotNetEnv.Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.WebHost.ConfigureKestrel(serverOptions =>
-{
-    serverOptions.ListenAnyIP(8080);
-});
 var connectionString =
     $"Host={Environment.GetEnvironmentVariable("DB_SERVER")};" +
     $"Port={Environment.GetEnvironmentVariable("DB_PORT")};" +
