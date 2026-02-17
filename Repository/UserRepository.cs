@@ -14,6 +14,12 @@ public class UserRepository : IUserRepository
         _efDbContext = efDbContext;
     }
 
+    public async Task<User?> GetUserByEmailAndPassword(string email, string password)
+    {
+        return await _efDbContext.Users.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Email == email && x.PasswordHash == password);
+    }
+
     public async Task<List<User>> GetAllAsync()
     {
         return await _efDbContext.Users.AsNoTracking().ToListAsync();

@@ -9,7 +9,11 @@ using API_PortalSantosTech.Services;
 DotNetEnv.Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls("http://0.0.0.0:8080");
+if (builder.Environment.IsProduction())
+{
+    builder.WebHost.UseUrls("http://0.0.0.0:8080");
+}
+
 var connectionString =
     $"Host={Environment.GetEnvironmentVariable("DB_SERVER")};" +
     $"Port={Environment.GetEnvironmentVariable("DB_PORT")};" +
@@ -32,7 +36,18 @@ builder.Services.AddScoped<TokenService>();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.TagActionsBy(api =>
+    {
+        if (!string.IsNullOrWhiteSpace(api.GroupName))
+            return new[] { api.GroupName };
+
+        return new[] { api.ActionDescriptor.RouteValues["controller"] };
+    });
+
+    c.OrderActionsBy(apiDesc => apiDesc.GroupName);
+});
 
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));

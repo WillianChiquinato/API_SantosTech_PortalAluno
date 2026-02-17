@@ -16,17 +16,52 @@ public class UserService : IUserService
         _userRepository = userRepository;
     }
 
+    public async Task<CustomResponse<User>> GetUserByEmailAndPassword(string email, string password)
+    {
+        try
+        {
+            var hashedPassword = new HashPassword().ComputeSha256Base64(password);
+
+            var result = await _userRepository.GetUserByEmailAndPassword(email, hashedPassword);
+
+            return result == null
+                ? CustomResponse<User>.Fail("Email ou senha inválidos")
+                : CustomResponse<User>.SuccessTrade(result);
+        }
+        catch (Exception e)
+        {
+            return CustomResponse<User>.Fail("Ocorreu um erro", e.Message);
+        }
+    }
+
     public async Task<CustomResponse<IEnumerable<User>>> GetAllAsync()
     {
-        var result = await _userRepository.GetAllAsync();
-        return CustomResponse<IEnumerable<User>>.SuccessTrade(result);
+        try
+        {
+            var result = await _userRepository.GetAllAsync();
+
+            return result == null
+                ? CustomResponse<IEnumerable<User>>.Fail("Nenhum usuário encontrado")
+                : CustomResponse<IEnumerable<User>>.SuccessTrade(result);
+        }
+        catch (Exception e)
+        {
+            return CustomResponse<IEnumerable<User>>.Fail("Ocorreu um erro", e.Message);
+        }
     }
 
     public async Task<CustomResponse<User>> GetByIdAsync(int id)
     {
-        var result = await _userRepository.GetByIdAsync(id);
-        return result == null
-            ? CustomResponse<User>.Fail("User not found")
-            : CustomResponse<User>.SuccessTrade(result);
+        try
+        {
+            var result = await _userRepository.GetByIdAsync(id);
+            return result == null
+                ? CustomResponse<User>.Fail("Usuario não encontrado")
+                : CustomResponse<User>.SuccessTrade(result);
+        }
+        catch (Exception e)
+        {
+            return CustomResponse<User>.Fail("Ocorreu um erro", e.Message);
+        }
     }
 }
