@@ -15,16 +15,26 @@ public class PointController : ControllerBase
     }
 
     [HttpGet]
+    [Route("GetAllPoints")]
     public async Task<IActionResult> GetAll()
     {
         var response = await _pointService.GetAllAsync();
         return Ok(response);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    [HttpGet]
+    [Route("GetPointById")]
+    public async Task<IActionResult> GetById([FromQuery] int id)
     {
         var response = await _pointService.GetByIdAsync(id);
         return response.Success ? Ok(response) : NotFound(response);
+    }
+
+    [HttpGet]
+    [Route("GetRanking")]
+    public async Task<IActionResult> GetRanking()
+    {
+        var response = await _pointService.GetRankingAsync();
+        return Ok(response);
     }
 }

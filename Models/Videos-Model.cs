@@ -13,6 +13,7 @@ public enum Visibility
 public class Video
 {
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Column("id")]
     public int Id { get; set; }
     

@@ -6,4 +6,5 @@ public interface IBadgeRepository
 {
     Task<List<Badge>> GetAllAsync();
     Task<Badge?> GetByIdAsync(int id);
+    Task<List<Badge?>> GetByUserIdAsync(int userId);
 }

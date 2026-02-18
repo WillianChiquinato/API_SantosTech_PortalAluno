@@ -19,6 +19,7 @@ public enum ExerciseType
 public class Exercise
 {
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Column("id")]
     public int Id { get; set; }
 

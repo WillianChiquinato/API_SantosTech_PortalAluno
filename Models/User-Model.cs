@@ -14,6 +14,7 @@ public enum UserRole
 public class User
 {
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Column("id")]
     public int Id { get; set; }
 
@@ -31,6 +32,12 @@ public class User
 
     [Column("profile_picture_url")]
     public string? ProfilePictureUrl { get; set; }
+
+    [Column("cover_photo_url")]
+    public string? CoverPhotoUrl { get; set; }
+
+    [Column("bio")]
+    public string? Bio { get; set; }
 
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }

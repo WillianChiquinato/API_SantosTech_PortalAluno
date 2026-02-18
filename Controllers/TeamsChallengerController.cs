@@ -15,14 +15,16 @@ public class TeamsChallengerController : ControllerBase
     }
 
     [HttpGet]
+    [Route("GetAllTeamsChallengers")]
     public async Task<IActionResult> GetAll()
     {
         var response = await _teamsChallengerService.GetAllAsync();
         return Ok(response);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    [HttpGet]
+    [Route("GetTeamChallengerById")]
+    public async Task<IActionResult> GetById([FromQuery] int id)
     {
         var response = await _teamsChallengerService.GetByIdAsync(id);
         return response.Success ? Ok(response) : NotFound(response);

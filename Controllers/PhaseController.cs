@@ -15,16 +15,26 @@ public class PhaseController : ControllerBase
     }
 
     [HttpGet]
+    [Route("GetAllPhase")]
     public async Task<IActionResult> GetAll()
     {
         var response = await _phaseService.GetAllAsync();
         return Ok(response);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    [HttpGet]
+    [Route("GetById")]
+    public async Task<IActionResult> GetById([FromQuery] int id)
     {
         var response = await _phaseService.GetByIdAsync(id);
+        return response.Success ? Ok(response) : NotFound(response);
+    }
+
+    [HttpGet]
+    [Route("GetCurrentPhaseUser")]
+    public async Task<IActionResult> GetCurrentPhaseUser([FromQuery] int userId)
+    {
+        var response = await _phaseService.GetCurrentPhaseUserAsync(userId);
         return response.Success ? Ok(response) : NotFound(response);
     }
 }

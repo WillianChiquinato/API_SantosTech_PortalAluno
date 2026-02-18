@@ -31,4 +31,5 @@ public class AppDbContext : DbContext
     public DbSet<Video> Videos { get; set; }
 
     public DbSet<Logs> Logs { get; set; }
+    public DbSet<LevelUser> LevelUsers { get; set; }
 }

@@ -6,4 +6,5 @@ public interface IEnrollmentRepository
 {
     Task<List<Enrollment>> GetAllAsync();
     Task<Enrollment?> GetByIdAsync(int id);
+    Task<Enrollment?> GetByUserIdAsync(int userId);
 }

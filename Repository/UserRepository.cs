@@ -29,4 +29,11 @@ public class UserRepository : IUserRepository
     {
         return await _efDbContext.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
     }
+
+    public Task<float> GetUserPointsAsync(int userId)
+    {
+        return _efDbContext.Points.AsNoTracking()
+            .Where(up => up.UserId == userId)
+            .SumAsync(up => up.Points);
+    }
 }

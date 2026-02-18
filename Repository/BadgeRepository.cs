@@ -23,4 +23,12 @@ public class BadgeRepository : IBadgeRepository
     {
         return await _efDbContext.Badges.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
     }
+
+    public Task<List<Badge?>> GetByUserIdAsync(int userId)
+    {
+        return _efDbContext.BadgeStudents.AsNoTracking()
+            .Where(ub => ub.UserId == userId)
+            .Select(ub => ub.Badge)
+            .ToListAsync();
+    }
 }

@@ -15,14 +15,16 @@ public class QuestionOptionController : ControllerBase
     }
 
     [HttpGet]
+    [Route("GetAllQuestionOptions")]
     public async Task<IActionResult> GetAll()
     {
         var response = await _questionOptionService.GetAllAsync();
         return Ok(response);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    [HttpGet]
+    [Route("GetQuestionOptionById")]
+    public async Task<IActionResult> GetById([FromQuery] int id)
     {
         var response = await _questionOptionService.GetByIdAsync(id);
         return response.Success ? Ok(response) : NotFound(response);

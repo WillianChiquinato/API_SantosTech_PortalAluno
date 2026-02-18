@@ -23,4 +23,18 @@ public class PhaseRepository : IPhaseRepository
     {
         return await _efDbContext.Phases.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
     }
+
+    public Task<Phase?> GetCurrentPhaseModuleUserAsync(int moduleId)
+    {
+        return _efDbContext.Phases
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.ModuleId == moduleId);
+    }
+
+    public Task<int> GetTotalPhasesByModuleIdAsync(int moduleId)
+    {
+        return _efDbContext.Phases
+            .AsNoTracking()
+            .CountAsync(p => p.ModuleId == moduleId);
+    }
 }

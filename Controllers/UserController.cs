@@ -54,10 +54,19 @@ public class UserController : ControllerBase
     }
 
     [HttpGet]
-    [Route("GetUserById/{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    [Route("GetUserById")]
+    public async Task<IActionResult> GetById([FromQuery] int id)
     {
         var response = await _userService.GetByIdAsync(id);
+        return response.Success ? Ok(response) : NotFound(response);
+    }
+
+    [HttpGet]
+    [Route("GetProfileData")]
+    public async Task<IActionResult> GetProfileData([FromQuery] int userid)
+    {
+        var response = await _userService.GetProfileDataAsync(userid);
+        
         return response.Success ? Ok(response) : NotFound(response);
     }
 }

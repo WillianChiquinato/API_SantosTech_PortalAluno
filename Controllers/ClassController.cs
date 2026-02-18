@@ -15,14 +15,16 @@ public class ClassController : ControllerBase
     }
 
     [HttpGet]
+    [Route("GetAllClasses")]
     public async Task<IActionResult> GetAll()
     {
         var response = await _classService.GetAllAsync();
         return Ok(response);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    [HttpGet]
+    [Route("GetClassById")]
+    public async Task<IActionResult> GetById([FromQuery] int id)
     {
         var response = await _classService.GetByIdAsync(id);
         return response.Success ? Ok(response) : NotFound(response);

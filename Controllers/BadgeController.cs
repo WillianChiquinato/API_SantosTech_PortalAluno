@@ -15,14 +15,16 @@ public class BadgeController : ControllerBase
     }
 
     [HttpGet]
+    [Route("GetAllBadges")]
     public async Task<IActionResult> GetAll()
     {
         var response = await _badgeService.GetAllAsync();
         return Ok(response);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    [HttpGet]
+    [Route("GetBadgeById")]
+    public async Task<IActionResult> GetById([FromQuery] int id)
     {
         var response = await _badgeService.GetByIdAsync(id);
         return response.Success ? Ok(response) : NotFound(response);

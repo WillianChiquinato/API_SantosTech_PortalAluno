@@ -15,14 +15,16 @@ public class ProgressStudentPhaseController : ControllerBase
     }
 
     [HttpGet]
+    [Route("GetAllProgressStudentPhases")]
     public async Task<IActionResult> GetAll()
     {
         var response = await _progressStudentPhaseService.GetAllAsync();
         return Ok(response);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    [HttpGet]
+    [Route("GetProgressStudentPhaseById")]
+    public async Task<IActionResult> GetById([FromQuery] int id)
     {
         var response = await _progressStudentPhaseService.GetByIdAsync(id);
         return response.Success ? Ok(response) : NotFound(response);

@@ -7,6 +7,7 @@ namespace API_PortalSantosTech.Models;
 public class Point
 {
     [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Column("id")]
     public int Id { get; set; }
 

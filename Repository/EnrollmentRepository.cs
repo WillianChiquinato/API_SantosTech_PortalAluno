@@ -23,4 +23,9 @@ public class EnrollmentRepository : IEnrollmentRepository
     {
         return await _efDbContext.Enrollments.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
     }
+
+    public Task<Enrollment?> GetByUserIdAsync(int userId)
+    {
+        return _efDbContext.Enrollments.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == userId);
+    }
 }

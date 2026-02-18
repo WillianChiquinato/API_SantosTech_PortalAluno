@@ -23,4 +23,19 @@ public class PointRepository : IPointRepository
     {
         return await _efDbContext.Points.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
     }
+
+    public Task<List<Point>> GetRankingAsync()
+    {
+        //Agrupar por usuario.
+        return _efDbContext.Points
+            .AsNoTracking()
+            .GroupBy(p => p.UserId)
+            .Select(g => new Point
+            {
+                UserId = g.Key,
+                Points = g.Sum(p => p.Points)
+            })
+            .OrderByDescending(p => p.Points)
+            .ToListAsync();
+    }
 }

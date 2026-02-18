@@ -23,4 +23,15 @@ public class ClassRepository : IClassRepository
     {
         return await _efDbContext.Classes.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
     }
+
+    public async Task<Module?> GetCurrentModuleByClassIdAsync(int classId)
+    {
+        var classEntity = await _efDbContext.Classes.AsNoTracking().FirstOrDefaultAsync(x => x.Id == classId);
+        if (classEntity == null)
+        {
+            return null;
+        }
+
+        return await _efDbContext.Modules.AsNoTracking().FirstOrDefaultAsync(x => x.Id == classEntity.CurrentModuleId);
+    }
 }

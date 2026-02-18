@@ -7,4 +7,5 @@ public interface IUserRepository
     Task<User?> GetUserByEmailAndPassword(string email, string password);
     Task<List<User>> GetAllAsync();
     Task<User?> GetByIdAsync(int id);
+    Task<float> GetUserPointsAsync(int userId);
 }

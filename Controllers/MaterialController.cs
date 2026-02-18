@@ -15,14 +15,16 @@ public class MaterialController : ControllerBase
     }
 
     [HttpGet]
+    [Route("GetAllMaterials")]
     public async Task<IActionResult> GetAll()
     {
         var response = await _materialService.GetAllAsync();
         return Ok(response);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    [HttpGet]
+    [Route("GetMaterialById")]
+    public async Task<IActionResult> GetById([FromQuery] int id)
     {
         var response = await _materialService.GetByIdAsync(id);
         return response.Success ? Ok(response) : NotFound(response);
