@@ -10,4 +10,5 @@ public interface IUserService
     Task<CustomResponse<IEnumerable<User>>> GetAllAsync();
     Task<CustomResponse<User>> GetByIdAsync(int id);
     Task<CustomResponse<UserProfileDataDTO>> GetProfileDataAsync(int id);
+    Task<CustomResponse<User>> UpdateUserAsync(UpdateUserRequest request);
 }

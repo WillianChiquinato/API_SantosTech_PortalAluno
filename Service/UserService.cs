@@ -131,4 +131,33 @@ public class UserService : IUserService
             return CustomResponse<UserProfileDataDTO>.Fail("Ocorreu um erro", e.Message);
         }
     }
+
+    public async Task<CustomResponse<User>> UpdateUserAsync(UpdateUserRequest request)
+    {
+        try
+        {
+            var userToUpdate = new User
+            {
+                Id = request.Id,
+                Name = request.Name,
+                Email = request.Email,
+                PasswordHash = string.IsNullOrEmpty(request.Password) ? null : new HashPassword().ComputeSha256Base64(request.Password),
+                Role = (UserRole)(request.Role ?? 0),
+                Bio = request.Bio,
+                ProfilePictureUrl = request.ProfilePictureUrl,
+                CoverPhotoUrl = request.CoverPictureUrl,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            var result = await _userRepository.UpdateUserAsync(userToUpdate);
+
+            return result == null
+                ? CustomResponse<User>.Fail("Falha ao atualizar o usuário")
+                : CustomResponse<User>.SuccessTrade(result);
+        }
+        catch (Exception e)
+        {
+            return CustomResponse<User>.Fail("Ocorreu um erro", e.Message);
+        }
+    }
 }

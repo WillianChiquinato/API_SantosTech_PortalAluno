@@ -32,4 +32,5 @@ public class AppDbContext : DbContext
 
     public DbSet<Logs> Logs { get; set; }
     public DbSet<LevelUser> LevelUsers { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
 }

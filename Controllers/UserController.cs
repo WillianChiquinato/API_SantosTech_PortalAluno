@@ -69,4 +69,12 @@ public class UserController : ControllerBase
         
         return response.Success ? Ok(response) : NotFound(response);
     }
+
+    [HttpPut]
+    [Route("UpdateUser")]
+    public async Task<IActionResult> UpdateUser([FromBody] UpdateUserRequest request)
+    {
+        var response = await _userService.UpdateUserAsync(request);
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
 }
