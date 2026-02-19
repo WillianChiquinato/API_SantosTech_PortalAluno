@@ -1,4 +1,5 @@
 using API_PortalSantosTech.Interfaces;
+using API_PortalSantosTech.Models.DTO;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API_PortalSantosTech.Controllers;
@@ -28,5 +29,22 @@ public class VideoController : ControllerBase
     {
         var response = await _videoService.GetByIdAsync(id);
         return response.Success ? Ok(response) : NotFound(response);
+    }
+
+    [HttpGet]
+    [Route("GetProgressUserVideos")]
+    public async Task<IActionResult> GetProgressUserVideos([FromQuery] int userId)
+    {
+        var response = await _videoService.GetProgressUserVideosAsync(userId);
+        return Ok(response);
+    }
+
+    [HttpPost]
+    [Route("SaveProgressVideo")]
+    public async Task<IActionResult> SaveProgressVideo([FromBody] VideoProgressDTO progressData)
+    {
+        var response = await _videoService.SaveProgressVideoAsync(progressData);
+
+        return response != null ? Ok(response) : BadRequest("Erro ao salvar progresso do vídeo");
     }
 }

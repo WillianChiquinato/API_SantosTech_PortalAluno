@@ -23,9 +23,6 @@ public class Logs
     [Column("entity_name")]
     public string? EntityName { get; set; }
 
-    [Column("entity_id")]
-    public int? EntityId { get; set; }
-
     [Column("LogDate")]
     public DateTime LogDate { get; set; }
 }
