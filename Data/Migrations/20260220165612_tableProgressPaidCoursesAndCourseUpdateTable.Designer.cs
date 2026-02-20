@@ -3,6 +3,7 @@ using System;
 using API_PortalSantosTech.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace API_PortalSantosTech.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260220165612_tableProgressPaidCoursesAndCourseUpdateTable")]
+    partial class tableProgressPaidCoursesAndCourseUpdateTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -283,10 +286,6 @@ namespace API_PortalSantosTech.Data.Migrations
                     b.Property<int>("IndexOrder")
                         .HasColumnType("integer")
                         .HasColumnName("index_order");
-
-                    b.Property<bool>("IsDailyTask")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_daily_task");
 
                     b.Property<bool>("IsFinalExercise")
                         .HasColumnType("boolean")

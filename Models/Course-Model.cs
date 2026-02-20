@@ -20,6 +20,18 @@ public class Course
     [Column("is_paid")]
     public bool IsPaid { get; set; }
 
+    [Column("price")]
+    public decimal Price { get; set; }
+
+    [Column("duration_hours")]
+    public int Duration { get; set; }
+
+    [Column("level_difficulty")]
+    public string? LevelDifficulty { get; set; }
+
+    [Column("paid_focus")]
+    public string? PaidFocus { get; set; }
+
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }
 

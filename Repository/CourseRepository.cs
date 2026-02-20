@@ -23,4 +23,18 @@ public class CourseRepository : ICourseRepository
     {
         return await _efDbContext.Courses.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
     }
+
+    public Task<List<Course>> GetFullCoursesPaidAsync()
+    {
+        return _efDbContext.Courses.AsNoTracking()
+            .Where(c => c.IsPaid)
+            .ToListAsync();
+    }
+
+    public Task<List<ProgressPaidCourses>> GetProgressUserPaidCoursesAsync(int userId)
+    {
+        return _efDbContext.ProgressPaidCourses.AsNoTracking()
+            .Where(p => p.UserId == userId)
+            .ToListAsync();
+    }
 }

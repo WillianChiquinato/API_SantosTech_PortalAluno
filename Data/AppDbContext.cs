@@ -24,6 +24,7 @@ public class AppDbContext : DbContext
     public DbSet<ProgressExerciseStudent> ProgressExerciseStudents { get; set; }
     public DbSet<ProgressStudentPhase> ProgressStudentPhases { get; set; }
     public DbSet<ProgressVideoStudent> ProgressVideoStudents { get; set; }
+    public DbSet<ProgressPaidCourses> ProgressPaidCourses { get; set; }
     public DbSet<Question> Questions { get; set; }
     public DbSet<QuestionOption> QuestionOptions { get; set; }
     public DbSet<TeamsChallenger> TeamsChallengers { get; set; }

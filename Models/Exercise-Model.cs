@@ -12,7 +12,7 @@ public enum DifficultyLevel
 public enum ExerciseType
 {
     MultipleChoice = 1,
-    OpenEnded = 2
+    OpenEnded = 2,
 }
 
 [Table("exercise")]
@@ -43,6 +43,9 @@ public class Exercise
 
     [Column("index_order")]
     public int IndexOrder { get; set; }
+
+    [Column("is_daily_task")]
+    public bool IsDailyTask { get; set; }
 
     [Column("is_final_exercise")]
     public bool IsFinalExercise { get; set; }
