@@ -24,6 +24,14 @@ public class CourseRepository : ICourseRepository
         return await _efDbContext.Courses.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
     }
 
+    public Task<List<Course>> GetCoursesAvailablesAsync()
+    {
+        return _efDbContext.Courses.AsNoTracking()
+            .Where(c => c.IsPaid == false)
+            .OrderBy(c => c.Id)
+            .ToListAsync();
+    }
+
     public Task<List<Course>> GetFullCoursesPaidAsync()
     {
         return _efDbContext.Courses.AsNoTracking()

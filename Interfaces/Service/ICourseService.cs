@@ -7,6 +7,7 @@ public interface ICourseService
 {
     Task<CustomResponse<IEnumerable<Course>>> GetAllAsync();
     Task<CustomResponse<Course>> GetByIdAsync(int id);
+    Task<CustomResponse<IEnumerable<Course>>> GetCoursesAvailablesAsync();
     Task<CustomResponse<IEnumerable<Course>>> GetFullCoursesPaidAsync();
     Task<CustomResponse<IEnumerable<ProgressPaidCourses>>> GetProgressUserPaidCoursesAsync(int userId);
 }

@@ -3,6 +3,7 @@ using System;
 using API_PortalSantosTech.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace API_PortalSantosTech.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260220190518_pointsRedeemAndTermExercise")]
+    partial class pointsRedeemAndTermExercise
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -227,40 +230,6 @@ namespace API_PortalSantosTech.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("course");
-                });
-
-            modelBuilder.Entity("API_PortalSantosTech.Models.DailyTask", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<int>("ExerciseId")
-                        .HasColumnType("integer")
-                        .HasColumnName("exercise_id");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("text")
-                        .HasColumnName("name");
-
-                    b.Property<int>("PhaseId")
-                        .HasColumnType("integer")
-                        .HasColumnName("phase_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExerciseId");
-
-                    b.HasIndex("PhaseId");
-
-                    b.ToTable("daily_tasks");
                 });
 
             modelBuilder.Entity("API_PortalSantosTech.Models.Enrollment", b =>
@@ -1098,25 +1067,6 @@ namespace API_PortalSantosTech.Data.Migrations
                     b.Navigation("Course");
 
                     b.Navigation("CurrentModule");
-                });
-
-            modelBuilder.Entity("API_PortalSantosTech.Models.DailyTask", b =>
-                {
-                    b.HasOne("API_PortalSantosTech.Models.Exercise", "Exercise")
-                        .WithMany()
-                        .HasForeignKey("ExerciseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("API_PortalSantosTech.Models.Phase", "Phase")
-                        .WithMany()
-                        .HasForeignKey("PhaseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Exercise");
-
-                    b.Navigation("Phase");
                 });
 
             modelBuilder.Entity("API_PortalSantosTech.Models.Enrollment", b =>

@@ -65,4 +65,19 @@ public class PointService : IPointService
             return CustomResponse<IEnumerable<PointRankingDTO>>.Fail("Error fetching point ranking");
         }
     }
+
+    public async Task<CustomResponse<string>> AddPointsForUserAsync(RedeemPointsDTO redeemPoints)
+    {
+        try
+        {
+            var resultPointsUser = await _pointRepository.AddPointsForUserAsync(redeemPoints.UserId, redeemPoints.PointsToRedeem);
+
+            return CustomResponse<string>.SuccessTrade("Pontos resgatados com sucesso");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao resgatar pontos para o usuário");
+            return CustomResponse<string>.Fail("Erro ao resgatar pontos para o usuário");
+        }
+    }
 }

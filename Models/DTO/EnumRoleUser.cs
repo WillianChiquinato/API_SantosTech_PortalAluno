@@ -1,4 +1,5 @@
 namespace API_PortalSantosTech.Models.DTO;
+
 public enum EnumRoleUser
 {
     Admin = 1,

@@ -1,4 +1,5 @@
 using API_PortalSantosTech.Interfaces;
+using API_PortalSantosTech.Models.DTO;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API_PortalSantosTech.Controllers;
@@ -36,5 +37,13 @@ public class PointController : ControllerBase
     {
         var response = await _pointService.GetRankingAsync();
         return Ok(response);
+    }
+
+    [HttpPost]
+    [Route("AddPointsForUser")]
+    public async Task<IActionResult> AddPointsForUser([FromBody] RedeemPointsDTO redeemPoints)
+    {
+        var response = await _pointService.AddPointsForUserAsync(redeemPoints);
+        return response.Success ? Ok(response) : BadRequest(response);
     }
 }

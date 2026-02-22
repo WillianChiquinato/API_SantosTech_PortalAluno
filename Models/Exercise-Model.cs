@@ -35,6 +35,12 @@ public class Exercise
     [Column("video_url")]
     public string? VideoUrl { get; set; }
 
+    [Column("points_redeem")]
+    public int PointsRedeem { get; set; }
+
+    [Column("term_at")]
+    public DateTime TermAt { get; set; }
+
     [Column("type_exercise")]
     public ExerciseType TypeExercise { get; set; }
 

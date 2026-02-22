@@ -38,4 +38,25 @@ public class PointRepository : IPointRepository
             .OrderByDescending(p => p.Points)
             .ToListAsync();
     }
+
+    public async Task<bool> AddPointsForUserAsync(int userId, int pointsToAdd)
+    {
+        if (pointsToAdd < 0)
+        {
+            return false;
+        }
+
+        var pointEntry = new Point
+        {
+            UserId = userId,
+            Points = pointsToAdd,
+            Reason = "Pontos adicionados por exercicios realizados",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        
+        _efDbContext.Points.Add(pointEntry);
+        await _efDbContext.SaveChangesAsync();
+        return true;
+    }
 }

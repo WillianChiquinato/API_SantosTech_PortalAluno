@@ -46,6 +46,20 @@ public class CourseService : ICourseService
         }
     }
 
+    public async Task<CustomResponse<IEnumerable<Course>>> GetCoursesAvailablesAsync()
+    {
+        try
+        {
+            var result = await _courseRepository.GetCoursesAvailablesAsync();
+            return result == null ? CustomResponse<IEnumerable<Course>>.Fail("Nenhum curso disponível encontrado") : CustomResponse<IEnumerable<Course>>.SuccessTrade(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar cursos disponíveis");
+            return CustomResponse<IEnumerable<Course>>.Fail("Erro ao buscar cursos disponíveis");
+        }
+    }
+
     public async Task<CustomResponse<IEnumerable<Course>>> GetFullCoursesPaidAsync()
     {
         try

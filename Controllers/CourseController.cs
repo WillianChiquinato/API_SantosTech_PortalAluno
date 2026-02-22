@@ -23,6 +23,14 @@ public class CourseController : ControllerBase
     }
 
     [HttpGet]
+    [Route("GetCoursesAvailables")]
+    public async Task<IActionResult> GetCoursesAvailables()
+    {
+        var response = await _courseService.GetCoursesAvailablesAsync();
+        return Ok(response);
+    }
+
+    [HttpGet]
     [Route("GetFullCoursesPaid")]
     public async Task<IActionResult> GetFullCoursesPaid()
     {
