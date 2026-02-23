@@ -8,7 +8,7 @@ public interface IExerciseService
 {
     Task<CustomResponse<IEnumerable<Exercise>>> GetAllAsync();
     Task<CustomResponse<Exercise>> GetByIdAsync(int id);
-    Task<CustomResponse<IEnumerable<ExerciseDailyTasksDTO>>> GetDailyTasksForPhaseAsync(int phaseId);
+    Task<CustomResponse<IEnumerable<ExerciseDailyTasksDTO>>> GetDailyTasksForPhaseAsync(int phaseId, int userId);
     Task<CustomResponse<IEnumerable<QuestionOptionsDTO>>> GetQuestionsOptionsForExerciseAsync(int exerciseId);
     Task<CustomResponse<bool>> SubmitExerciseAnswersAsync(ExerciseSubmissionDTO submission);
 }

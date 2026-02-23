@@ -26,22 +26,64 @@ public class ExerciseRepository : IExerciseRepository
         return await _efDbContext.Exercises.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
     }
 
-    public async Task<List<ExerciseDailyTasksDTO>> GetDailyTasksForPhaseAsync(int phaseId)
+    public async Task<List<ExerciseDailyTasksDTO>> GetDailyTasksForPhaseAsync(int phaseId, int userId)
     {
         var tasksContainer = await _efDbContext.DailyTasks
             .Where(dt => dt.PhaseId == phaseId)
             .AsNoTracking()
             .ToListAsync();
 
+        var todayUtc = DateTime.UtcNow.Date;
+        var tomorrowUtc = todayUtc.AddDays(1);
+
         var exerciseIds = tasksContainer
             .Select(task => task.ExerciseId)
             .Distinct()
             .ToList();
 
-        var exercises = await _efDbContext.Exercises
+        var allPhaseExercises = await _efDbContext.Exercises
             .Where(e => exerciseIds.Contains(e.Id))
             .AsNoTracking()
             .ToListAsync();
+
+        var completedExerciseIds = await _efDbContext.Answers
+            .Where(answer => answer.UserId == userId && exerciseIds.Contains(answer.ExerciseId))
+            .Select(answer => answer.ExerciseId)
+            .Distinct()
+            .ToListAsync();
+
+        var completedExerciseIdsSet = completedExerciseIds.ToHashSet();
+
+        var overdueExercises = allPhaseExercises
+            .Where(exercise => exercise.ExercisePeriod.ToUniversalTime().Date < todayUtc
+                               && !completedExerciseIdsSet.Contains(exercise.Id))
+            .ToList();
+
+        var todayExercises = allPhaseExercises
+            .Where(exercise => exercise.ExercisePeriod.ToUniversalTime().Date == todayUtc)
+            .ToList();
+
+        var todayPendingExercises = todayExercises
+            .Where(exercise => !completedExerciseIdsSet.Contains(exercise.Id))
+            .ToList();
+
+        var tomorrowExercises = allPhaseExercises
+            .Where(exercise => exercise.ExercisePeriod.ToUniversalTime().Date == tomorrowUtc)
+            .ToList();
+
+        var selectedExercises = overdueExercises.Count > 0
+            ? overdueExercises.Concat(todayExercises).ToList()
+            : todayExercises.Count > 0 && todayPendingExercises.Count == 0
+                ? tomorrowExercises
+                : todayExercises;
+
+        var selectedExerciseIds = selectedExercises
+            .Select(exercise => exercise.Id)
+            .ToHashSet();
+
+        tasksContainer = tasksContainer
+            .Where(task => selectedExerciseIds.Contains(task.ExerciseId))
+            .ToList();
 
         return tasksContainer
             .GroupBy(task => new { task.Name, task.PhaseId })
@@ -54,7 +96,7 @@ public class ExerciseRepository : IExerciseRepository
                     PhaseId = group.Key.PhaseId,
                     Exercises = group
                         .Join(
-                            exercises,
+                            selectedExercises,
                             task => task.ExerciseId,
                             exercise => exercise.Id,
                             (_, exercise) => new ExerciseDTO
@@ -69,7 +111,8 @@ public class ExerciseRepository : IExerciseRepository
                                 Difficulty = exercise.Difficulty,
                                 IndexOrder = exercise.IndexOrder,
                                 IsDailyTask = exercise.IsDailyTask,
-                                IsFinalExercise = exercise.IsFinalExercise
+                                IsFinalExercise = exercise.IsFinalExercise,
+                                ExercisePeriod = exercise.ExercisePeriod
                             }
                         )
                         .OrderBy(exercise => exercise.IndexOrder)
@@ -78,6 +121,30 @@ public class ExerciseRepository : IExerciseRepository
             })
             .OrderBy(taskGroup => taskGroup.Id)
             .ToList();
+    }
+
+    public Task<List<ExerciseAnswerDTO>> GetExercisesAnswersForPhaseAsync(int phaseId, int userId)
+    {
+        var exerciseIds = _efDbContext.DailyTasks
+            .Where(dt => dt.PhaseId == phaseId)
+            .Select(dt => dt.ExerciseId)
+            .Distinct()
+            .ToList();
+
+        return _efDbContext.Answers
+            .Where(a => exerciseIds.Contains(a.ExerciseId) && a.UserId == userId)
+            .AsNoTracking()
+            .Select(a => new ExerciseAnswerDTO
+            {
+                Id = a.Id,
+                QuestionId = a.QuestionId,
+                ExerciseId = a.ExerciseId,
+                UserId = a.UserId,
+                IsCorrect = a.IsCorrect,
+                Answer = a.AnswerText ?? string.Empty,
+                SubmittedAt = a.AnsweredAt
+            })
+            .ToListAsync();
     }
 
     public async Task<List<QuestionOptionsDTO>> GetQuestionsOptionsForExerciseAsync(int exerciseId)
@@ -110,6 +177,8 @@ public class ExerciseRepository : IExerciseRepository
             QuestionId = submission.QuestionId,
             ExerciseId = submission.ExerciseId,
             AnswerText = null,
+            SelectedOption = submission.SubmissionData!.SelectedOption,
+            IsCorrect = submission.SubmissionData.IsCorrect,
             AnsweredAt = DateTime.UtcNow
         });
 

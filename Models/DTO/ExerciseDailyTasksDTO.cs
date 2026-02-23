@@ -21,4 +21,6 @@ public class ExerciseDTO
     public int IndexOrder { get; set; }
     public bool IsDailyTask { get; set; }
     public bool IsFinalExercise { get; set; }
+    public bool IsCompletedAnswer { get; set; }
+    public DateTime ExercisePeriod { get; set; }
 }

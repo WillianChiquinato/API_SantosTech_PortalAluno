@@ -314,6 +314,10 @@ namespace API_PortalSantosTech.Data.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("difficulty");
 
+                    b.Property<DateTime>("ExercisePeriod")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("exercise_period");
+
                     b.Property<int>("IndexOrder")
                         .HasColumnType("integer")
                         .HasColumnName("index_order");

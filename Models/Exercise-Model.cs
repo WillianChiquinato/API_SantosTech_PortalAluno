@@ -56,6 +56,9 @@ public class Exercise
     [Column("is_final_exercise")]
     public bool IsFinalExercise { get; set; }
 
+    [Column("exercise_period")]
+    public DateTime ExercisePeriod { get; set; }
+
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }
 

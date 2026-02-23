@@ -45,16 +45,26 @@ public class ExerciseService : IExerciseService
         }
     }
 
-    public async Task<CustomResponse<IEnumerable<ExerciseDailyTasksDTO>>> GetDailyTasksForPhaseAsync(int phaseId)
+    public async Task<CustomResponse<IEnumerable<ExerciseDailyTasksDTO>>> GetDailyTasksForPhaseAsync(int phaseId, int userId)
     {
         try
         {
-            var result = await _exerciseRepository.GetDailyTasksForPhaseAsync(phaseId);
+            var result = await _exerciseRepository.GetDailyTasksForPhaseAsync(phaseId, userId);
+            var exercisesAnswers = await _exerciseRepository.GetExercisesAnswersForPhaseAsync(phaseId, userId);
+
+            result.ForEach(task =>
+            {
+                task.Exercises.ForEach(exercise =>
+                {
+                    exercise.IsCompletedAnswer = exercisesAnswers.Any(answer => answer.ExerciseId == exercise.Id);
+                });
+            });
+
             return result == null ? CustomResponse<IEnumerable<ExerciseDailyTasksDTO>>.Fail("Nenhum exercício diário encontrado para a fase especificada") : CustomResponse<IEnumerable<ExerciseDailyTasksDTO>>.SuccessTrade(result);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao buscar exercícios diários para a fase {PhaseId}", phaseId);
+            _logger.LogError(ex, "Erro ao buscar exercícios diários para a fase {PhaseId} e usuário {UserId}", phaseId, userId);
             return CustomResponse<IEnumerable<ExerciseDailyTasksDTO>>.Fail("Ocorreu um erro ao buscar os exercícios diários para a fase especificada");
         }
     }

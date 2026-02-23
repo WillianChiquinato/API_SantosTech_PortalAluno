@@ -33,9 +33,9 @@ public class ExerciseController : ControllerBase
 
     [HttpGet]
     [Route("GetDailyTasksForPhase")]
-    public async Task<IActionResult> GetDailyTasksForPhase([FromQuery] int phaseId)
+    public async Task<IActionResult> GetDailyTasksForPhase([FromQuery] int phaseId, [FromQuery] int userId)
     {
-        var response = await _exerciseService.GetDailyTasksForPhaseAsync(phaseId);
+        var response = await _exerciseService.GetDailyTasksForPhaseAsync(phaseId, userId);
         return response.Success ? Ok(response) : NotFound(response);
     }
 
