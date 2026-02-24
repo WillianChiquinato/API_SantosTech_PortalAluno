@@ -160,4 +160,64 @@ public class UserService : IUserService
             return CustomResponse<User>.Fail("Ocorreu um erro", e.Message);
         }
     }
+
+    public async Task<CustomResponse<ConfigsDTO>> GetConfigsAsync(int id)
+    {
+        try
+        {
+            var result = await _userRepository.GetConfigsAsync(id);
+
+            return result == null
+                ? CustomResponse<ConfigsDTO>.Fail("Configurações do usuário não encontradas")
+                : CustomResponse<ConfigsDTO>.SuccessTrade(result);
+        }
+        catch (Exception e)
+        {
+            return CustomResponse<ConfigsDTO>.Fail("Ocorreu um erro", e.Message);
+        }
+    }
+
+    public async Task<CustomResponse<ConfigsDTO>> CreateNewConfigAsync(int id)
+    {
+        try
+        {
+            var result = await _userRepository.CreateNewConfigAsync(id);
+
+            return result == null
+                ? CustomResponse<ConfigsDTO>.Fail("Falha ao criar nova configuração")
+                : CustomResponse<ConfigsDTO>.SuccessTrade(result);
+        }
+        catch (Exception e)
+        {
+            return CustomResponse<ConfigsDTO>.Fail("Ocorreu um erro", e.Message);
+        }
+    }
+
+    public async Task<CustomResponse<UpdateConfigRequest>> UpdateConfigsAsync(UpdateConfigRequest request)
+    {
+        try
+        {
+            var result = await _userRepository.GetConfigsAsync(request.UserId);
+
+            if (result == null)
+                return CustomResponse<UpdateConfigRequest>.Fail("Configurações do usuário não encontradas");
+
+            result.ReceiveEmailNotifications = request.ReceiveEmailNotifications;
+            result.DarkModeEnabled = request.DarkModeEnabled;
+            result.ReportFrequency = request.ReportFrequency;
+            result.AcessibilityMode = request.AcessibilityMode;
+            result.PreferredLanguage = request.PreferredLanguage;
+
+            var updateResult = await _userRepository.UpdateConfigsAsync(request);
+
+            if (updateResult == null)
+                return CustomResponse<UpdateConfigRequest>.Fail("Falha ao atualizar as configurações do usuário");
+
+            return CustomResponse<UpdateConfigRequest>.SuccessTrade(request);
+        }
+        catch (Exception e)
+        {
+            return CustomResponse<UpdateConfigRequest>.Fail("Ocorreu um erro", e.Message);
+        }
+    }
 }

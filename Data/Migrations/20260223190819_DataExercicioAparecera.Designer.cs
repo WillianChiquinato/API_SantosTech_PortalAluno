@@ -3,6 +3,7 @@ using System;
 using API_PortalSantosTech.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace API_PortalSantosTech.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260223190819_DataExercicioAparecera")]
+    partial class DataExercicioAparecera
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -177,47 +180,6 @@ namespace API_PortalSantosTech.Data.Migrations
                     b.HasIndex("CurrentModuleId");
 
                     b.ToTable("class");
-                });
-
-            modelBuilder.Entity("API_PortalSantosTech.Models.Configs", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("AcessibilityMode")
-                        .HasColumnType("boolean")
-                        .HasColumnName("acessibility_mode");
-
-                    b.Property<bool>("DarkModeEnabled")
-                        .HasColumnType("boolean")
-                        .HasColumnName("dark_mode_enabled");
-
-                    b.Property<string>("PreferredLanguage")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("preferred_language");
-
-                    b.Property<bool>("ReceiveEmailNotifications")
-                        .HasColumnType("boolean")
-                        .HasColumnName("receive_email_notifications");
-
-                    b.Property<bool>("ReportFrequency")
-                        .HasColumnType("boolean")
-                        .HasColumnName("report_frequency");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("configs");
                 });
 
             modelBuilder.Entity("API_PortalSantosTech.Models.Course", b =>
@@ -1143,17 +1105,6 @@ namespace API_PortalSantosTech.Data.Migrations
                     b.Navigation("Course");
 
                     b.Navigation("CurrentModule");
-                });
-
-            modelBuilder.Entity("API_PortalSantosTech.Models.Configs", b =>
-                {
-                    b.HasOne("API_PortalSantosTech.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("API_PortalSantosTech.Models.DailyTask", b =>
