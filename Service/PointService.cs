@@ -66,18 +66,20 @@ public class PointService : IPointService
         }
     }
 
-    public async Task<CustomResponse<string>> AddPointsForUserAsync(RedeemPointsDTO redeemPoints)
+    public async Task<CustomResponse<string>> AddPointsForUserAsync(AddPointsDTO addPoints)
     {
         try
         {
-            var resultPointsUser = await _pointRepository.AddPointsForUserAsync(redeemPoints.UserId, redeemPoints.PointsToRedeem);
+            var resultPointsUser = await _pointRepository.AddPointsForUserAsync(addPoints.UserId, addPoints.PointsToAdd, addPoints.ExerciseDate);
 
-            return CustomResponse<string>.SuccessTrade("Pontos resgatados com sucesso");
+            return resultPointsUser
+                ? CustomResponse<string>.SuccessTrade("Pontos adicionados com sucesso")
+                : CustomResponse<string>.Fail("Erro ao adicionar pontos para o usuário");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao resgatar pontos para o usuário");
-            return CustomResponse<string>.Fail("Erro ao resgatar pontos para o usuário");
+            _logger.LogError(ex, "Erro ao adicionar pontos para o usuário");
+            return CustomResponse<string>.Fail("Erro ao adicionar pontos para o usuário");
         }
     }
 }

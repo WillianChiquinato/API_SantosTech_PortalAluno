@@ -41,7 +41,7 @@ public class PointController : ControllerBase
 
     [HttpPost]
     [Route("AddPointsForUser")]
-    public async Task<IActionResult> AddPointsForUser([FromBody] RedeemPointsDTO redeemPoints)
+    public async Task<IActionResult> AddPointsForUser([FromBody] AddPointsDTO redeemPoints)
     {
         var response = await _pointService.AddPointsForUserAsync(redeemPoints);
         return response.Success ? Ok(response) : BadRequest(response);

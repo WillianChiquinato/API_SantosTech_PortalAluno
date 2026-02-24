@@ -39,24 +39,43 @@ public class PointRepository : IPointRepository
             .ToListAsync();
     }
 
-    public async Task<bool> AddPointsForUserAsync(int userId, int pointsToAdd)
+    public async Task<bool> AddPointsForUserAsync(
+    int userId,
+    int pointsToAdd,
+    DateTime exerciseDate)
     {
-        if (pointsToAdd < 0)
-        {
+        if (pointsToAdd <= 0)
             return false;
+
+        var todayUtc = DateTime.UtcNow.Date;
+        var wasLate = exerciseDate.Date < todayUtc;
+
+        var reason = wasLate
+            ? $"Exercício concluído com atraso de 40%. Pontos finais: {pointsToAdd}"
+            : $"Exercício concluído no prazo. Pontos ganhos: {pointsToAdd}";
+
+        if (exerciseDate.Date < todayUtc)
+        {
+            pointsToAdd = (int)Math.Round(
+                pointsToAdd * 0.6,
+                MidpointRounding.AwayFromZero);
+
+            if (pointsToAdd <= 0)
+                return false;
         }
 
         var pointEntry = new Point
         {
             UserId = userId,
             Points = pointsToAdd,
-            Reason = "Pontos adicionados por exercicios realizados",
+            Reason = reason,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
-        
+
         _efDbContext.Points.Add(pointEntry);
         await _efDbContext.SaveChangesAsync();
+
         return true;
     }
 }
