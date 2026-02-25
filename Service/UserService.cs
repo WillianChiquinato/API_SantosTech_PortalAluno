@@ -14,8 +14,9 @@ public class UserService : IUserService
     private readonly IEnrollmentRepository _enrollmentRepository;
     private readonly IClassRepository _classRepository;
     private readonly IBadgeRepository _badgeRepository;
+    private readonly ICloudflareR2Service _cloudflareR2Service;
 
-    public UserService(ILogger<UserService> logger, IUserRepository userRepository, ILevelUserRepository levelUserRepository, IEnrollmentRepository enrollmentRepository, IClassRepository classRepository, IBadgeRepository badgeRepository)
+    public UserService(ILogger<UserService> logger, IUserRepository userRepository, ILevelUserRepository levelUserRepository, IEnrollmentRepository enrollmentRepository, IClassRepository classRepository, IBadgeRepository badgeRepository, ICloudflareR2Service cloudflareR2Service)
     {
         _logger = logger;
         _userRepository = userRepository;
@@ -23,17 +24,24 @@ public class UserService : IUserService
         _enrollmentRepository = enrollmentRepository;
         _classRepository = classRepository;
         _badgeRepository = badgeRepository;
+        _cloudflareR2Service = cloudflareR2Service;
     }
 
     public async Task<CustomResponse<User>> GetUserByEmailAndPassword(string email, string password)
     {
         try
         {
-            var hashedPassword = new HashPassword().ComputeSha256Base64(password);
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+                return CustomResponse<User>.Fail("Email ou senha inválidos");
 
-            var result = await _userRepository.GetUserByEmailAndPassword(email, hashedPassword);
+            var result = await _userRepository.GetUserByEmail(email);
 
-            return result == null
+            if (result == null || string.IsNullOrWhiteSpace(result.PasswordHash))
+                return CustomResponse<User>.Fail("Email ou senha inválidos");
+
+            var isValidPassword = VerifyPassword(password, result.PasswordHash);
+
+            return !isValidPassword
                 ? CustomResponse<User>.Fail("Email ou senha inválidos")
                 : CustomResponse<User>.SuccessTrade(result);
         }
@@ -108,6 +116,7 @@ public class UserService : IUserService
                     Name = resultUser.Name,
                     Bio = resultUser.Bio,
                     Role = roleUser,
+                    PasswordHash = resultUser.PasswordHash,
                     ProfilePictureUrl = resultUser.ProfilePictureUrl,
                     CoverPictureUrl = resultUser.CoverPhotoUrl,
                     LevelUser = userLevel!.Name,
@@ -136,16 +145,30 @@ public class UserService : IUserService
     {
         try
         {
+            var profilePictureUrl = await ResolveUserImageUrlAsync(request.ProfilePictureUrl, "users/profile");
+            var coverPictureUrl = await ResolveUserImageUrlAsync(request.CoverPictureUrl, "users/cover");
+            string? passwordHash = null;
+            
+            if (String.IsNullOrWhiteSpace(request.Password))
+            {
+                var getPasswordHash = await _userRepository.GetByIdAsync(request.Id);
+                passwordHash = getPasswordHash?.PasswordHash;
+            }
+            else
+            {
+                passwordHash = ResolvePasswordHash(request.Password);
+            }
+
             var userToUpdate = new User
             {
                 Id = request.Id,
                 Name = request.Name,
                 Email = request.Email,
-                PasswordHash = string.IsNullOrEmpty(request.Password) ? null : new HashPassword().ComputeSha256Base64(request.Password),
+                PasswordHash = passwordHash,
                 Role = (UserRole)(request.Role ?? 0),
                 Bio = request.Bio,
-                ProfilePictureUrl = request.ProfilePictureUrl,
-                CoverPhotoUrl = request.CoverPictureUrl,
+                ProfilePictureUrl = profilePictureUrl,
+                CoverPhotoUrl = coverPictureUrl,
                 UpdatedAt = DateTime.UtcNow
             };
 
@@ -159,6 +182,44 @@ public class UserService : IUserService
         {
             return CustomResponse<User>.Fail("Ocorreu um erro", e.Message);
         }
+    }
+
+    private async Task<string?> ResolveUserImageUrlAsync(string? imageInput, string folder)
+    {
+        if (string.IsNullOrWhiteSpace(imageInput))
+            return imageInput;
+
+        if (!imageInput.StartsWith("data:image", StringComparison.OrdinalIgnoreCase))
+            return imageInput;
+
+        return await _cloudflareR2Service.UploadBase64ImageAsync(imageInput, folder);
+    }
+
+    private static string? ResolvePasswordHash(string? passwordInput)
+    {
+        if (string.IsNullOrWhiteSpace(passwordInput))
+            return null;
+
+        if (IsBcryptHash(passwordInput))
+            return passwordInput;
+
+        return BCrypt.Net.BCrypt.HashPassword(passwordInput);
+    }
+
+    private static bool VerifyPassword(string rawPassword, string storedHash)
+    {
+        if (IsBcryptHash(storedHash))
+            return BCrypt.Net.BCrypt.Verify(rawPassword, storedHash);
+
+        return false;
+    }
+
+    private static bool IsBcryptHash(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length < 20)
+            return false;
+
+        return value.StartsWith("$2a$") || value.StartsWith("$2b$") || value.StartsWith("$2y$");
     }
 
     public async Task<CustomResponse<ConfigsDTO>> GetConfigsAsync(int id)

@@ -44,6 +44,7 @@ public class PointController : ControllerBase
     public async Task<IActionResult> AddPointsForUser([FromBody] AddPointsDTO redeemPoints)
     {
         var response = await _pointService.AddPointsForUserAsync(redeemPoints);
-        return response.Success ? Ok(response) : BadRequest(response);
+
+        return response.Success ? Ok(response) : Ok(new { Success = false, Message = response.Result });
     }
 }

@@ -13,5 +13,6 @@ public class ExerciseSubmissionResultDTO
     public int SelectedOption { get; set; }
     public bool IsCorrect { get; set; }
     public int PointsEarned { get; set; }
+    public string AnswerText { get; set; } = string.Empty;
     public DateTime SubmittedAt { get; set; }
 }

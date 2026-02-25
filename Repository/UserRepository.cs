@@ -15,10 +15,10 @@ public class UserRepository : IUserRepository
         _efDbContext = efDbContext;
     }
 
-    public async Task<User?> GetUserByEmailAndPassword(string email, string password)
+    public async Task<User?> GetUserByEmail(string email)
     {
         return await _efDbContext.Users.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Email == email && x.PasswordHash == password);
+            .FirstOrDefaultAsync(x => x.Email == email);
     }
 
     public async Task<List<User>> GetAllAsync()

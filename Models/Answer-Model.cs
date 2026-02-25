@@ -32,6 +32,9 @@ public class Answer
     [Column("answered_at")]
     public DateTime AnsweredAt { get; set; }
 
+    [Column("feedback")]
+    public string? Feedback { get; set; }
+
     // 🔗 Relacionamentos
     [ForeignKey(nameof(UserId))]
     public User? User { get; set; }

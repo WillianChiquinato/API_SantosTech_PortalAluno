@@ -176,7 +176,7 @@ public class ExerciseRepository : IExerciseRepository
             UserId = submission.UserId,
             QuestionId = submission.QuestionId,
             ExerciseId = submission.ExerciseId,
-            AnswerText = null,
+            AnswerText = submission.SubmissionData!.AnswerText,
             SelectedOption = submission.SubmissionData!.SelectedOption,
             IsCorrect = submission.SubmissionData.IsCorrect,
             AnsweredAt = DateTime.UtcNow

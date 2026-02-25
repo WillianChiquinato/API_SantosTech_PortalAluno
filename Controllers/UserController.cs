@@ -2,6 +2,7 @@ using API_PortalSantosTech.Interfaces;
 using API_PortalSantosTech.Models.DTO;
 using API_PortalSantosTech.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API_PortalSantosTech.Controllers;
 
@@ -19,6 +20,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPost]
+    [EnableRateLimiting("loginPolicy")]
     [Route("Login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {

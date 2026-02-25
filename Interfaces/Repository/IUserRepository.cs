@@ -5,7 +5,7 @@ namespace API_PortalSantosTech.Interfaces.Repository;
 
 public interface IUserRepository
 {
-    Task<User?> GetUserByEmailAndPassword(string email, string password);
+    Task<User?> GetUserByEmail(string email);
     Task<List<User>> GetAllAsync();
     Task<User?> GetByIdAsync(int id);
     Task<float> GetUserPointsAsync(int userId);
