@@ -79,4 +79,12 @@ public class UserController : ControllerBase
         var response = await _userService.UpdateUserAsync(request);
         return response.Success ? Ok(response) : BadRequest(response);
     }
+
+    [HttpPost]
+    [Route("SendEmailVerify")]
+    public async Task<IActionResult> SendEmailVerify([FromBody] EmailRequest request)
+    {
+        var response = await _userService.SendEmailVerifyAsync(request.Email);
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
 }

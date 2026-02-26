@@ -14,4 +14,5 @@ public interface IUserService
     Task<CustomResponse<ConfigsDTO>> GetConfigsAsync(int id);
     Task<CustomResponse<ConfigsDTO>> CreateNewConfigAsync(int id);
     Task<CustomResponse<UpdateConfigRequest>> UpdateConfigsAsync(UpdateConfigRequest request);
+    Task<CustomResponse<bool>> SendEmailVerifyAsync(string email);
 }

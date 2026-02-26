@@ -1,7 +1,9 @@
 using API_PortalSantosTech.Data;
+using API_PortalSantosTech.Interfaces;
 using API_PortalSantosTech.Interfaces.Repository;
 using API_PortalSantosTech.Models;
 using API_PortalSantosTech.Models.DTO;
+using API_PortalSantosTech.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace API_PortalSantosTech.Repository;
@@ -9,10 +11,12 @@ namespace API_PortalSantosTech.Repository;
 public class UserRepository : IUserRepository
 {
     private readonly AppDbContext _efDbContext;
+    private readonly IEmailService _emailService;
 
-    public UserRepository(AppDbContext efDbContext)
+    public UserRepository(AppDbContext efDbContext, IEmailService emailService)
     {
         _efDbContext = efDbContext;
+        _emailService = emailService;
     }
 
     public async Task<User?> GetUserByEmail(string email)
@@ -113,5 +117,32 @@ public class UserRepository : IUserRepository
             AcessibilityMode = config.AcessibilityMode,
             PreferredLanguage = config.PreferredLanguage
         };
+    }
+
+    public async Task<bool> SendEmailVerifyAsync(string email)
+    {
+        if (email == null)
+        {
+            return false;
+        }
+
+        var responseGrid = await _emailService.SendEmailAsync(email, "Verificação de Email", "<p>Por favor, verifique seu email.</p>");
+
+        if (responseGrid)
+        {
+            //Update database config receive email notifications to true.
+            var user = await _efDbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+            if (user != null)            {
+                var config = await _efDbContext.Configs.FirstOrDefaultAsync(c => c.UserId == user.Id);
+                if (config != null)
+                {
+                    config.ReceiveEmailNotifications = true;
+                    _efDbContext.Configs.Update(config);
+                    await _efDbContext.SaveChangesAsync();
+                }
+            }
+        }
+
+        return responseGrid;
     }
 }

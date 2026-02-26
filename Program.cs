@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using API_PortalSantosTech.Services;
 using System.Threading.RateLimiting;
+using API_PortalSantosTech.Interfaces;
 
 DotNetEnv.Env.Load();
 
@@ -36,6 +37,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<IEmailService, SendGridEmailService>();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();

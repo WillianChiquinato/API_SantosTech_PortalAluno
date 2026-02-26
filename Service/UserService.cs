@@ -101,10 +101,10 @@ public class UserService : IUserService
             {
                 userLevel = resultLevel.OrderBy(l => l.PointsRequired).FirstOrDefault();
             }
-            
+
             var getEnrollMentUser = await _enrollmentRepository.GetByUserIdAsync(id);
             var GetClassInUser = await _classRepository.GetByIdAsync(getEnrollMentUser?.ClassId ?? 0);
-            
+
             var UserBadges = await _badgeRepository.GetByUserIdAsync(id);
 
             return resultUser == null
@@ -148,7 +148,7 @@ public class UserService : IUserService
             var profilePictureUrl = await ResolveUserImageUrlAsync(request.ProfilePictureUrl, "users/profile");
             var coverPictureUrl = await ResolveUserImageUrlAsync(request.CoverPictureUrl, "users/cover");
             string? passwordHash = null;
-            
+
             if (String.IsNullOrWhiteSpace(request.Password))
             {
                 var getPasswordHash = await _userRepository.GetByIdAsync(request.Id);
@@ -279,6 +279,22 @@ public class UserService : IUserService
         catch (Exception e)
         {
             return CustomResponse<UpdateConfigRequest>.Fail("Ocorreu um erro", e.Message);
+        }
+    }
+
+    public async Task<CustomResponse<bool>> SendEmailVerifyAsync(string email)
+    {
+        try
+        {
+            var result = await _userRepository.SendEmailVerifyAsync(email);
+
+            return result
+                ? CustomResponse<bool>.SuccessTrade(true)
+                : CustomResponse<bool>.Fail("Falha ao enviar email de verificação");
+        }
+        catch (Exception e)
+        {
+            return CustomResponse<bool>.Fail("Ocorreu um erro", e.Message);
         }
     }
 }
