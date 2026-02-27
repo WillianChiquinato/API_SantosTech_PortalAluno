@@ -10,5 +10,7 @@ public interface IExerciseRepository
     Task<List<ExerciseDailyTasksDTO>> GetDailyTasksForPhaseAsync(int phaseId, int userId);
     Task<List<QuestionOptionsDTO>> GetQuestionsOptionsForExerciseAsync(int exerciseId);
     Task<bool> SubmitExerciseAnswersAsync(ExerciseSubmissionDTO submission);
-    Task<List<ExerciseAnswerDTO>> GetExercisesAnswersForPhaseAsync(int phaseId, int userId);
+    Task<List<ExerciseAnswerDTO>> GetDailyExercisesAnswersForPhaseAsync(int phaseId, int userId);
+    Task<List<ExerciseDTO>> GetExercisesByPhaseId(int phaseId);
+    Task<List<ExerciseAnswerDTO>> GetExercisesAnswersForUserAsync(int userId);
 }

@@ -3,6 +3,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace API_PortalSantosTech.Models;
 
+public enum StatusStates
+{
+    Pending = 0,
+    Unlocked = 1,
+    Completed = 2
+}
+
 [Table("progress_student_phase")]
 public class ProgressStudentPhase
 {
@@ -19,6 +26,9 @@ public class ProgressStudentPhase
 
     [Column("progress")]
     public double Progress { get; set; }
+
+    [Column("status")]
+    public StatusStates Status { get; set; } = StatusStates.Pending;
 
     [Column("unlocked_at")]
     public DateTime? UnlockedAt { get; set; }

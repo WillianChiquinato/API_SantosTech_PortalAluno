@@ -23,4 +23,10 @@ public class ProgressStudentPhaseRepository : IProgressStudentPhaseRepository
     {
         return await _efDbContext.ProgressStudentPhases.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
     }
+
+    public async Task<ProgressStudentPhase?> GetProgressByUserIdAndPhaseIdAsync(int userId, int phaseId)
+    {
+        return await _efDbContext.ProgressStudentPhases.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.UserId == userId && x.PhaseId == phaseId);
+    }
 }

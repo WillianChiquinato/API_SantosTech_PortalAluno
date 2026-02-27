@@ -123,7 +123,7 @@ public class ExerciseRepository : IExerciseRepository
             .ToList();
     }
 
-    public Task<List<ExerciseAnswerDTO>> GetExercisesAnswersForPhaseAsync(int phaseId, int userId)
+    public Task<List<ExerciseAnswerDTO>> GetDailyExercisesAnswersForPhaseAsync(int phaseId, int userId)
     {
         var exerciseIds = _efDbContext.DailyTasks
             .Where(dt => dt.PhaseId == phaseId)
@@ -143,6 +143,29 @@ public class ExerciseRepository : IExerciseRepository
                 IsCorrect = a.IsCorrect,
                 Answer = a.AnswerText ?? string.Empty,
                 SubmittedAt = a.AnsweredAt
+            })
+            .ToListAsync();
+    }
+
+    public Task<List<ExerciseDTO>> GetExercisesByPhaseId(int phaseId)
+    {
+        return _efDbContext.Exercises
+            .Where(e => e.PhaseId == phaseId && !e.IsDailyTask)
+            .AsNoTracking()
+            .Select(e => new ExerciseDTO
+            {
+                Id = e.Id,
+                Title = e.Title,
+                Description = e.Description,
+                VideoUrl = e.VideoUrl,
+                PointsRedeem = e.PointsRedeem,
+                TermAt = e.TermAt,
+                TypeExercise = e.TypeExercise,
+                Difficulty = e.Difficulty,
+                IndexOrder = e.IndexOrder,
+                IsDailyTask = e.IsDailyTask,
+                IsFinalExercise = e.IsFinalExercise,
+                ExercisePeriod = e.ExercisePeriod
             })
             .ToListAsync();
     }
@@ -184,5 +207,23 @@ public class ExerciseRepository : IExerciseRepository
 
         await _efDbContext.SaveChangesAsync();
         return true;
+    }
+
+    public Task<List<ExerciseAnswerDTO>> GetExercisesAnswersForUserAsync(int userId)
+    {
+        return _efDbContext.Answers
+            .Where(a => a.UserId == userId)
+            .AsNoTracking()
+            .Select(a => new ExerciseAnswerDTO
+            {
+                Id = a.Id,
+                QuestionId = a.QuestionId,
+                ExerciseId = a.ExerciseId,
+                UserId = a.UserId,
+                IsCorrect = a.IsCorrect,
+                Answer = a.AnswerText ?? string.Empty,
+                SubmittedAt = a.AnsweredAt
+            })
+            .ToListAsync();
     }
 }

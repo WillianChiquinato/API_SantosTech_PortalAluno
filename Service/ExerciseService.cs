@@ -50,7 +50,7 @@ public class ExerciseService : IExerciseService
         try
         {
             var result = await _exerciseRepository.GetDailyTasksForPhaseAsync(phaseId, userId);
-            var exercisesAnswers = await _exerciseRepository.GetExercisesAnswersForPhaseAsync(phaseId, userId);
+            var exercisesAnswers = await _exerciseRepository.GetDailyExercisesAnswersForPhaseAsync(phaseId, userId);
 
             result.ForEach(task =>
             {

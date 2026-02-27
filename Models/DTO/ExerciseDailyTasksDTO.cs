@@ -19,7 +19,7 @@ public class ExerciseDTO
     public ExerciseType TypeExercise { get; set; }
     public DifficultyLevel Difficulty { get; set; }
     public int IndexOrder { get; set; }
-    public bool IsDailyTask { get; set; }
+    public bool? IsDailyTask { get; set; }
     public bool IsFinalExercise { get; set; }
     public bool IsCompletedAnswer { get; set; }
     public DateTime ExercisePeriod { get; set; }
