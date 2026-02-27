@@ -56,12 +56,18 @@ public class ClassService : IClassService
     {
         try
         {
-            var getModule = await _classRepository.GetModuleByPhaseIdAsync(phaseId);
-            if (getModule == null)
-            {
+            var module = await _classRepository.GetModuleByPhaseIdAsync(phaseId);
+            if (module == null)
                 return CustomResponse<IEnumerable<IslandDTO>>.Fail("Módulo não encontrado para a fase informada");
-            }
-            var phases = await _classRepository.GetPhasesByCurrentModuleAsync(getModule.Id);
+
+            var phases = await _classRepository.GetPhasesByCurrentModuleAsync(module.Id);
+
+            if (phases == null || !phases.Any())
+                return CustomResponse<IEnumerable<IslandDTO>>.Fail("Nenhuma ilha encontrada para o módulo");
+
+            var userAnswers = await _exerciseRepository
+                .GetExercisesAnswersForUserAsync(userId);
+
             var finalResult = new List<IslandDTO>();
 
             foreach (var phase in phases)
@@ -69,81 +75,87 @@ public class ClassService : IClassService
                 var statusProgress = await _progressStudentPhaseRepository
                     .GetProgressByUserIdAndPhaseIdAsync(userId, phase.Id);
 
-                var exercises = await _exerciseRepository
-                    .GetExercisesByPhaseId(phase.Id);
+                var flow = await _exerciseRepository
+                        .GetByUserAndPhaseOrderedAsync(userId, phase.Id);
 
-                var answers = await _exerciseRepository
-                    .GetExercisesAnswersForUserAsync(userId);
+                if (!flow.Any())
+                {
+                    await CreateInitialFlowAsync(userId, phase.Id);
 
-                var random = new Random();
+                    flow = await _exerciseRepository
+                        .GetByUserAndPhaseOrderedAsync(userId, phase.Id);
+                }
+
+                var flowExerciseIds = flow
+                    .Select(f => f.ExerciseId)
+                    .ToList();
+
+                var flowExercises = await _exerciseRepository
+                    .GetFlowWithExercisesAsync(userId, phase.Id);
+
+                var exercisesById = flowExercises
+                    .DistinctBy(e => e.Id)
+                    .ToDictionary(e => e.Id);
+
+                var flowIds = flow.Select(f => f.Id).ToList();
+                var phaseAnswers = userAnswers
+                    .Where(a => flowIds.Contains(a.UserExerciseFlowId))
+                    .ToList();
+
+                var latestAnswers = phaseAnswers
+                    .GroupBy(a => a.UserExerciseFlowId)
+                    .Select(g => g.OrderByDescending(x => x.SubmittedAt).First())
+                    .ToList();
+
+                var answersByExercise = latestAnswers
+                    .ToDictionary(a => a.UserExerciseFlowId);
+
                 var blipsList = new List<BlipsDTO>();
 
-                var mainExercises = exercises
-                    .Where(e => e.Difficulty != DifficultyLevel.Lower && (e.IsDailyTask == false))
-                    .OrderBy(e => e.IndexOrder)
-                    .ToList();
-
-                var lowerExercises = exercises
-                    .Where(e => e.Difficulty == DifficultyLevel.Lower && (e.IsDailyTask == false))
-                    .OrderBy(e => e.IndexOrder)
-                    .ToList();
-
-                foreach (var exercise in mainExercises)
+                foreach (var flowItem in flow.OrderBy(f => f.IndexOrder))
                 {
-                    var answer = answers.FirstOrDefault(a => a.ExerciseId == exercise.Id || a.QuestionId == exercise.Id);
+                    if (!exercisesById.TryGetValue(flowItem.ExerciseId, out var exercise))
+                        continue;
 
                     string state;
 
-                    if (answer == null)
+                    if (!answersByExercise.TryGetValue(flowItem.Id, out var answer))
+                    {
                         state = "Não iniciado";
-                    else if (!answer.IsCorrect)
-                        state = "Errou";
+                    }
                     else
-                        state = "Correto";
+                    {
+                        state = answer.IsCorrect ? "Correto" : "Errou";
+                    }
+
+                    var exerciseDto = new ExerciseDTO
+                    {
+                        Id = exercise.Id,
+                        Title = exercise.Title,
+                        Description = exercise.Description,
+                        VideoUrl = exercise.VideoUrl,
+                        PointsRedeem = exercise.PointsRedeem,
+                        TermAt = exercise.TermAt,
+                        TypeExercise = exercise.TypeExercise,
+                        Difficulty = exercise.Difficulty,
+                        IndexOrder = exercise.IndexOrder,
+                        IsFinalExercise = exercise.IsFinalExercise,
+                        ExercisePeriod = exercise.ExercisePeriod
+                    };
 
                     blipsList.Add(new BlipsDTO
                     {
-                        Exercise = exercise,
-                        State = state
+                        Exercise = exerciseDto,
+                        State = state,
+                        Origin = flowItem.Origin
                     });
-
-                    if (answer != null && !answer.IsCorrect)
-                    {
-                        foreach (var lower in lowerExercises)
-                        {
-                            var lowerAnswer = answers.FirstOrDefault(a => a.ExerciseId == lower.Id || a.QuestionId == lower.Id);
-
-                            string lowerState;
-
-                            if (lowerAnswer == null)
-                                lowerState = "Não iniciado";
-                            else if (!lowerAnswer.IsCorrect)
-                                lowerState = "Errou";
-                            else
-                                lowerState = "Correto";
-
-                            if (!blipsList.Any(b => b.Exercise.Id == lower.Id))
-                            {
-                                blipsList.Add(new BlipsDTO
-                                {
-                                    Exercise = lower,
-                                    State = lowerState
-                                });
-                            }
-                        }
-                    }
                 }
 
-                // Ajuste para marcar "Atual" apenas no primeiro "Não iniciado"
-                bool currentAssigned = false;
-                foreach (var blip in blipsList.OrderBy(b => b.Exercise.IndexOrder))
-                {
-                    if (!currentAssigned && blip.State == "Não iniciado")
-                    {
-                        blip.State = "Atual";
-                        currentAssigned = true;
-                    }
-                }
+                var firstNotStarted = blipsList
+                    .FirstOrDefault(b => b.State == "Não iniciado");
+
+                if (firstNotStarted != null)
+                    firstNotStarted.State = "Atual";
 
                 finalResult.Add(new IslandDTO
                 {
@@ -151,25 +163,65 @@ public class ClassService : IClassService
                     Order = phase.Order,
                     Title = phase.Title,
                     Helper = phase.Helper,
-                    Status = (int?)statusProgress?.Status == 0 ? "Não Iniciado" :
-                             (int?)statusProgress?.Status == 1 ? "Em Progresso" :
-                             (int?)statusProgress?.Status == 2 ? "Concluído" : "Desconhecido",
+                    Status = GetPhaseStatus(statusProgress),
                     Progress = statusProgress?.Progress ?? 0,
                     Blips = blipsList.ToArray()
                 });
             }
 
-            if (finalResult == null || !finalResult.Any())
-            {
-                return CustomResponse<IEnumerable<IslandDTO>>.Fail("Nenhuma ilha encontrada para o usuário e fase especificados");
-            }
-
-            return CustomResponse<IEnumerable<IslandDTO>>.SuccessTrade(finalResult);
+            return CustomResponse<IEnumerable<IslandDTO>>
+                .SuccessTrade(finalResult);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao buscar ilhas para o usuário {UserId} e fase {PhaseId}", userId, phaseId);
-            return CustomResponse<IEnumerable<IslandDTO>>.Fail("Ocorreu um erro ao buscar as ilhas");
+            _logger.LogError(ex,
+                "Erro ao buscar ilhas para o usuário {UserId} e fase {PhaseId}",
+                userId, phaseId);
+
+            return CustomResponse<IEnumerable<IslandDTO>>
+                .Fail("Ocorreu um erro ao buscar as ilhas");
         }
+    }
+
+    private string GetPhaseStatus(ProgressStudentPhase? statusProgress)
+    {
+        return (int?)statusProgress?.Status switch
+        {
+            0 => "Não Iniciado",
+            1 => "Em Progresso",
+            2 => "Concluído",
+            _ => "Desconhecido"
+        };
+    }
+
+    public async Task CreateInitialFlowAsync(int userId, int phaseId)
+    {
+        var exercises = await _exerciseRepository
+            .GetExercisesByPhaseId(phaseId);
+
+        var mainExercises = exercises
+            .Where(e => e.Difficulty == DifficultyLevel.Normal)
+            .OrderBy(e => e.IndexOrder)
+            .ToList();
+
+        if (!mainExercises.Any())
+            return;
+
+        int order = 0;
+
+        var initialFlow = mainExercises
+            .Select(e => new UserExerciseFlow
+            {
+                UserId = userId,
+                PhaseId = phaseId,
+                ExerciseId = e.Id,
+                IndexOrder = order++,
+                Origin = FlowOrigin.Main,
+                TriggeredByExerciseId = null,
+                CreatedAt = DateTime.UtcNow
+            })
+            .ToList();
+
+        await _exerciseRepository.CreateUserExerciseFlowAsync(initialFlow);
     }
 }

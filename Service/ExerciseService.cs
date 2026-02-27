@@ -88,12 +88,35 @@ public class ExerciseService : IExerciseService
         try
         {
             var result = await _exerciseRepository.SubmitExerciseAnswersAsync(submission);
+
+            var exercise = await _exerciseRepository.GetByIdAsync(submission.ExerciseId);
+            if (exercise == null)            {
+                return CustomResponse<bool>.Fail("Exercício não encontrado");
+            }
+
+            if (submission.SubmissionData!.SelectedOption != -1 && !submission.SubmissionData.IsCorrect)
+            {
+                await InsertLowerExercisesAsync(submission.UserId, submission.PhaseId, exercise.Id);
+            }
+
             return result ? CustomResponse<bool>.SuccessTrade(true) : CustomResponse<bool>.Fail("Falha ao processar as respostas do exercício");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao processar as respostas do exercício");
             return CustomResponse<bool>.Fail("Ocorreu um erro ao processar as respostas do exercício");
+        }
+    }
+
+    public async Task InsertLowerExercisesAsync(int userId, int phaseId, int exerciseId)
+    {
+        try
+        {
+            await _exerciseRepository.InsertLowerExercisesAsync(userId, phaseId, exerciseId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao inserir exercícios inferiores para o usuário {UserId}, fase {PhaseId} e exercício {ExerciseId}", userId, phaseId, exerciseId);
         }
     }
 }

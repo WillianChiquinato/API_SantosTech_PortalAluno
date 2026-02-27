@@ -3,6 +3,7 @@ using System;
 using API_PortalSantosTech.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace API_PortalSantosTech.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260227145221_newTableUserFlowExercises")]
+    partial class newTableUserFlowExercises
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -59,10 +62,6 @@ namespace API_PortalSantosTech.Data.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("selected_option");
 
-                    b.Property<int>("UserExerciseFlowId")
-                        .HasColumnType("integer")
-                        .HasColumnName("user_exercise_flow_id");
-
                     b.Property<int>("UserId")
                         .HasColumnType("integer")
                         .HasColumnName("user_id");
@@ -72,8 +71,6 @@ namespace API_PortalSantosTech.Data.Migrations
                     b.HasIndex("ExerciseId");
 
                     b.HasIndex("QuestionId");
-
-                    b.HasIndex("UserExerciseFlowId");
 
                     b.HasIndex("UserId");
 
@@ -1091,12 +1088,6 @@ namespace API_PortalSantosTech.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ExerciseId");
-
-                    b.HasIndex("PhaseId");
-
-                    b.HasIndex("UserId");
-
                     b.ToTable("user_exercise_flow");
                 });
 
@@ -1156,12 +1147,6 @@ namespace API_PortalSantosTech.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("API_PortalSantosTech.Models.UserExerciseFlow", "UserExerciseFlow")
-                        .WithMany()
-                        .HasForeignKey("UserExerciseFlowId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("API_PortalSantosTech.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -1173,8 +1158,6 @@ namespace API_PortalSantosTech.Data.Migrations
                     b.Navigation("Question");
 
                     b.Navigation("User");
-
-                    b.Navigation("UserExerciseFlow");
                 });
 
             modelBuilder.Entity("API_PortalSantosTech.Models.BadgeStudent", b =>
@@ -1483,33 +1466,6 @@ namespace API_PortalSantosTech.Data.Migrations
                     b.Navigation("Class");
 
                     b.Navigation("Module");
-                });
-
-            modelBuilder.Entity("API_PortalSantosTech.Models.UserExerciseFlow", b =>
-                {
-                    b.HasOne("API_PortalSantosTech.Models.Exercise", "Exercise")
-                        .WithMany()
-                        .HasForeignKey("ExerciseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("API_PortalSantosTech.Models.Phase", "Phase")
-                        .WithMany()
-                        .HasForeignKey("PhaseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("API_PortalSantosTech.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Exercise");
-
-                    b.Navigation("Phase");
-
-                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

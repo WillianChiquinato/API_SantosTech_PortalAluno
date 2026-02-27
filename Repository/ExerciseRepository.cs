@@ -198,6 +198,7 @@ public class ExerciseRepository : IExerciseRepository
         {
             UserId = submission.UserId,
             QuestionId = submission.QuestionId,
+            UserExerciseFlowId = submission.UserExerciseFlowId,
             ExerciseId = submission.ExerciseId,
             AnswerText = submission.SubmissionData!.AnswerText,
             SelectedOption = submission.SubmissionData!.SelectedOption,
@@ -220,10 +221,138 @@ public class ExerciseRepository : IExerciseRepository
                 QuestionId = a.QuestionId,
                 ExerciseId = a.ExerciseId,
                 UserId = a.UserId,
+                UserExerciseFlowId = a.UserExerciseFlowId,
                 IsCorrect = a.IsCorrect,
                 Answer = a.AnswerText ?? string.Empty,
                 SubmittedAt = a.AnsweredAt
             })
             .ToListAsync();
+    }
+
+    public Task<List<ExerciseAnswerDTO>> GetExercisesAnswersForUserByExerciseIdsAsync(int userId, List<int> exerciseIds)
+    {
+        return _efDbContext.Answers
+            .Where(a => a.UserId == userId && exerciseIds.Contains(a.ExerciseId))
+            .AsNoTracking()
+            .Select(a => new ExerciseAnswerDTO
+            {
+                Id = a.Id,
+                QuestionId = a.QuestionId,
+                ExerciseId = a.ExerciseId,
+                UserId = a.UserId,
+                IsCorrect = a.IsCorrect,
+                Answer = a.AnswerText ?? string.Empty,
+                SubmittedAt = a.AnsweredAt
+            })
+            .ToListAsync();
+    }
+
+    public Task<List<UserExerciseFlow>> GetByUserAndPhaseOrderedAsync(int userId, int phaseId)
+    {
+        return _efDbContext.UserExerciseFlows
+            .Where(uef => uef.UserId == userId && uef.PhaseId == phaseId)
+            .AsNoTracking()
+            .OrderBy(uef => uef.IndexOrder)
+            .ToListAsync();
+    }
+
+    public Task<List<Exercise>> GetByIdsAsync(List<int> ids)
+    {
+        return _efDbContext.Exercises
+            .Where(e => ids.Contains(e.Id))
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    public async Task CreateUserExerciseFlowAsync(List<UserExerciseFlow> userExerciseFlows)
+    {
+        await _efDbContext.UserExerciseFlows.AddRangeAsync(userExerciseFlows);
+        await _efDbContext.SaveChangesAsync();
+    }
+
+    public async Task<List<Exercise>> GetFlowWithExercisesAsync(int userId, int phaseId)
+    {
+        var userExerciseFlows = await _efDbContext.UserExerciseFlows
+            .Where(uef => uef.UserId == userId && uef.PhaseId == phaseId)
+            .Include(uef => uef.Exercise)
+            .OrderBy(uef => uef.IndexOrder)
+            .AsNoTracking()
+            .ToListAsync();
+    
+        return userExerciseFlows
+            .Select(uef => uef.Exercise)
+            .Where(ex => ex != null)
+            .ToList();
+    }
+
+    public async Task InsertLowerExercisesAsync(int userId, int phaseId, int mainExerciseId)
+    {
+        var alreadyInserted = await _efDbContext.UserExerciseFlows
+            .AnyAsync(f =>
+                f.UserId == userId &&
+                f.PhaseId == phaseId &&
+                f.TriggeredByExerciseId == mainExerciseId);
+
+        if (alreadyInserted)
+            return;
+
+        var lowerPool = await _efDbContext.Exercises
+            .Where(e =>
+                e.PhaseId == phaseId &&
+                e.Difficulty == DifficultyLevel.Lower)
+            .AsNoTracking()
+            .ToListAsync();
+
+        if (!lowerPool.Any())
+            return;
+
+        var random = new Random();
+        var quantity = random.Next(1, 4);
+
+        var selectedLowers = lowerPool
+            .OrderBy(_ => Guid.NewGuid())
+            .Take(quantity)
+            .ToList();
+
+        var mainFlow = await _efDbContext.UserExerciseFlows
+            .FirstOrDefaultAsync(f =>
+                f.UserId == userId &&
+                f.PhaseId == phaseId &&
+                f.ExerciseId == mainExerciseId);
+
+        if (mainFlow == null)
+            return;
+
+        var insertionIndex = mainFlow.IndexOrder + 1;
+
+        var flowsToShift = await _efDbContext.UserExerciseFlows
+            .Where(f =>
+                f.UserId == userId &&
+                f.PhaseId == phaseId &&
+                f.IndexOrder >= insertionIndex)
+            .ToListAsync();
+
+        foreach (var flow in flowsToShift)
+        {
+            flow.IndexOrder += quantity;
+        }
+
+        int localIndex = insertionIndex;
+
+        var newFlows = selectedLowers.Select(lower => new UserExerciseFlow
+        {
+            UserId = userId,
+            PhaseId = phaseId,
+            ExerciseId = lower.Id,
+            IndexOrder = localIndex++,
+            Origin = FlowOrigin.Lower,
+            TriggeredByExerciseId = mainExerciseId,
+            CreatedAt = DateTime.UtcNow
+        }).ToList();
+
+        await _efDbContext.UserExerciseFlows.AddRangeAsync(newFlows);
+
+        //Salvar tudo junto
+        await _efDbContext.SaveChangesAsync();
     }
 }

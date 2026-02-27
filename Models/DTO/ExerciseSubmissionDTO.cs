@@ -5,6 +5,8 @@ public class ExerciseSubmissionDTO
     public int ExerciseId { get; set; }
     public int UserId { get; set; }
     public int QuestionId { get; set; }
+    public int PhaseId { get; set; }
+    public int UserExerciseFlowId { get; set; }
     public ExerciseSubmissionResultDTO? SubmissionData { get; set; }
 }
 

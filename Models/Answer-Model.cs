@@ -20,6 +20,9 @@ public class Answer
     [Column("exercise_id")]
     public int ExerciseId { get; set; }
 
+    [Column("user_exercise_flow_id")]
+    public int UserExerciseFlowId { get; set; }
+
     [Column("answer_text")]
     public string? AnswerText { get; set; }
 
@@ -44,4 +47,7 @@ public class Answer
 
     [ForeignKey(nameof(ExerciseId))]
     public Exercise? Exercise { get; set; }
+
+    [ForeignKey(nameof(UserExerciseFlowId))]
+    public UserExerciseFlow? UserExerciseFlow { get; set; }
 }
