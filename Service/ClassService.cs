@@ -147,7 +147,9 @@ public class ClassService : IClassService
                     {
                         Exercise = exerciseDto,
                         State = state,
-                        Origin = flowItem.Origin
+                        Origin = flowItem.Origin,
+                        PhaseId = flowItem.PhaseId,
+                        UserExerciseFlowId = flowItem.Id
                     });
                 }
 

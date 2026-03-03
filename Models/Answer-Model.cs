@@ -21,7 +21,7 @@ public class Answer
     public int ExerciseId { get; set; }
 
     [Column("user_exercise_flow_id")]
-    public int UserExerciseFlowId { get; set; }
+    public int? UserExerciseFlowId { get; set; }
 
     [Column("answer_text")]
     public string? AnswerText { get; set; }

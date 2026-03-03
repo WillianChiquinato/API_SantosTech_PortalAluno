@@ -7,7 +7,7 @@ public interface IExerciseRepository
 {
     Task<List<Exercise>> GetAllAsync();
     Task<Exercise?> GetByIdAsync(int id);
-    Task<List<Exercise?>> GetByIdsAsync(List<int> ids);
+    Task<List<Exercise>> GetByIdsAsync(List<int> ids);
     Task<List<ExerciseDailyTasksDTO>> GetDailyTasksForPhaseAsync(int phaseId, int userId);
     Task<List<QuestionOptionsDTO>> GetQuestionsOptionsForExerciseAsync(int exerciseId);
     Task<bool> SubmitExerciseAnswersAsync(ExerciseSubmissionDTO submission);

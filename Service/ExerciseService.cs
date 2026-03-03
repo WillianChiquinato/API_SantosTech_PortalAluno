@@ -90,13 +90,17 @@ public class ExerciseService : IExerciseService
             var result = await _exerciseRepository.SubmitExerciseAnswersAsync(submission);
 
             var exercise = await _exerciseRepository.GetByIdAsync(submission.ExerciseId);
-            if (exercise == null)            {
+            if (exercise == null)
+            {
                 return CustomResponse<bool>.Fail("Exercício não encontrado");
             }
 
-            if (submission.SubmissionData!.SelectedOption != -1 && !submission.SubmissionData.IsCorrect)
+            if (!exercise!.IsDailyTask)
             {
-                await InsertLowerExercisesAsync(submission.UserId, submission.PhaseId, exercise.Id);
+                if (submission.SubmissionData!.SelectedOption != -1 && !submission.SubmissionData.IsCorrect)
+                {
+                    await InsertLowerExercisesAsync(submission.UserId, submission.PhaseId ?? 0, exercise.Id);
+                }
             }
 
             return result ? CustomResponse<bool>.SuccessTrade(true) : CustomResponse<bool>.Fail("Falha ao processar as respostas do exercício");

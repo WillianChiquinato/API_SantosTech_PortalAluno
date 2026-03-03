@@ -221,7 +221,7 @@ public class ExerciseRepository : IExerciseRepository
                 QuestionId = a.QuestionId,
                 ExerciseId = a.ExerciseId,
                 UserId = a.UserId,
-                UserExerciseFlowId = a.UserExerciseFlowId,
+                UserExerciseFlowId = a.UserExerciseFlowId ?? 0,
                 IsCorrect = a.IsCorrect,
                 Answer = a.AnswerText ?? string.Empty,
                 SubmittedAt = a.AnsweredAt
@@ -280,8 +280,8 @@ public class ExerciseRepository : IExerciseRepository
             .ToListAsync();
     
         return userExerciseFlows
-            .Select(uef => uef.Exercise)
-            .Where(ex => ex != null)
+            .Where(uef => uef.Exercise != null)
+            .Select(uef => uef.Exercise!)
             .ToList();
     }
 
