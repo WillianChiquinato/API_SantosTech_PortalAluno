@@ -14,4 +14,5 @@ public interface IUserRepository
     Task<ConfigsDTO> CreateNewConfigAsync(int userId);
     Task<ConfigsDTO> UpdateConfigsAsync(UpdateConfigRequest request);
     Task<bool> SendEmailVerifyAsync(string email);
+    Task<bool> ConfirmEmailVerifyAsync(string email, string code);
 }

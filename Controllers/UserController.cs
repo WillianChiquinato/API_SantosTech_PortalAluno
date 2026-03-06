@@ -87,4 +87,12 @@ public class UserController : ControllerBase
         var response = await _userService.SendEmailVerifyAsync(request.Email);
         return response.Success ? Ok(response) : BadRequest(response);
     }
+
+    [HttpPost]
+    [Route("ConfirmEmailVerify")]
+    public async Task<IActionResult> ConfirmEmailVerify([FromBody] ConfirmEmailRequest request)
+    {
+        var response = await _userService.ConfirmEmailVerifyAsync(request.Email, request.Code);
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
 }

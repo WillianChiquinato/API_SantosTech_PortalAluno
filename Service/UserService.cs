@@ -297,4 +297,20 @@ public class UserService : IUserService
             return CustomResponse<bool>.Fail("Ocorreu um erro", e.Message);
         }
     }
+
+    public async Task<CustomResponse<bool>> ConfirmEmailVerifyAsync(string email, string code)
+    {
+        try
+        {
+            var result = await _userRepository.ConfirmEmailVerifyAsync(email, code);
+
+            return result
+                ? CustomResponse<bool>.SuccessTrade(true)
+                : CustomResponse<bool>.Fail("Falha ao confirmar email de verificação");
+        }
+        catch (Exception e)
+        {
+            return CustomResponse<bool>.Fail("Ocorreu um erro", e.Message);
+        }
+    }
 }

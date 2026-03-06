@@ -35,6 +35,7 @@ public class ClassController : ControllerBase
     public async Task<IActionResult> GetIslandsByUserIdAndCurrentModule([FromQuery] int userId, [FromQuery] int phaseId)
     {
         var response = await _classService.GetIslandsByUserIdAndCurrentModuleAsync(userId, phaseId);
-        return Ok(response);
+        
+        return response.Success ? Ok(response) : NotFound(response);
     }
 }

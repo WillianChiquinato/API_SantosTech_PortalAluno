@@ -66,7 +66,7 @@ public class PhaseService : IPhaseService
             var phaseUserDto = new CurrentPhaseDTO
             {
                 Id = result?.Id ?? 0,
-                Name = result?.Name ?? "No current phase",
+                Name = result?.Name ?? "Nenhuma fase atrelada",
                 Module = new CurrentModuleDTO
                 {
                     Id = GetClassInUser?.CurrentModuleId ?? 0,

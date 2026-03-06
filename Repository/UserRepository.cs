@@ -5,6 +5,7 @@ using API_PortalSantosTech.Models;
 using API_PortalSantosTech.Models.DTO;
 using API_PortalSantosTech.Services;
 using Microsoft.EntityFrameworkCore;
+using System.Text;
 
 namespace API_PortalSantosTech.Repository;
 
@@ -46,13 +47,13 @@ public class UserRepository : IUserRepository
     {
         _efDbContext.Users.Update(user);
         await _efDbContext.SaveChangesAsync();
-        
+
         return user;
     }
 
     public async Task<ConfigsDTO> GetConfigsAsync(int userId)
     {
-        var user = await _efDbContext.Configs.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+        var user = await _efDbContext.Configs.AsNoTracking().FirstOrDefaultAsync(u => u.UserId == userId);
         if (user == null)
         {
             return null;
@@ -121,28 +122,101 @@ public class UserRepository : IUserRepository
 
     public async Task<bool> SendEmailVerifyAsync(string email)
     {
-        if (email == null)
+        if (string.IsNullOrWhiteSpace(email))
         {
             return false;
         }
 
-        var responseGrid = await _emailService.SendEmailAsync(email, "Verificação de Email", "<p>Por favor, verifique seu email.</p>");
+        var verificationCode = GenerateVerificationCode();
 
-        if (responseGrid)
+        var codeEmail = new CodeEmail
         {
-            //Update database config receive email notifications to true.
-            var user = await _efDbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
-            if (user != null)            {
-                var config = await _efDbContext.Configs.FirstOrDefaultAsync(c => c.UserId == user.Id);
-                if (config != null)
-                {
-                    config.ReceiveEmailNotifications = true;
-                    _efDbContext.Configs.Update(config);
-                    await _efDbContext.SaveChangesAsync();
-                }
+            Email = email,
+            Code = verificationCode,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _efDbContext.CodeEmails.Add(codeEmail);
+        await _efDbContext.SaveChangesAsync();
+
+        var htmlBody = BuildEmailVerificationHtml(verificationCode);
+        var responseGrid = await _emailService.SendEmailAsync(
+            email,
+            "Verificação de Email",
+            htmlBody
+        );
+
+        return responseGrid;
+    }
+
+    private static string GenerateVerificationCode()
+    {
+        return Random.Shared.Next(0, 1_000_000).ToString("D6");
+    }
+
+    private static string BuildEmailVerificationHtml(string verificationCode)
+    {
+        var html = new StringBuilder();
+
+        html.Append("<!DOCTYPE html>");
+        html.Append("<html lang='pt-BR'>");
+        html.Append("<head>");
+        html.Append("<meta charset='UTF-8' />");
+        html.Append("<meta name='viewport' content='width=device-width, initial-scale=1.0' />");
+        html.Append("<title>Verificacao de Email</title>");
+        html.Append("</head>");
+        html.Append("<body style='margin:0;padding:0;background:#f3f6fb;font-family:Arial,sans-serif;'>");
+        html.Append("<table role='presentation' cellpadding='0' cellspacing='0' width='100%' style='padding:24px 12px;'>");
+        html.Append("<tr><td align='center'>");
+        html.Append("<table role='presentation' cellpadding='0' cellspacing='0' width='100%' style='max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;'>");
+        html.Append("<tr><td style='background:linear-gradient(135deg,#0f766e,#0891b2);padding:28px 24px;text-align:center;'>");
+        html.Append("<h1 style='margin:0;color:#ffffff;font-size:24px;line-height:1.2;'>Confirme seu email</h1>");
+        html.Append("<p style='margin:10px 0 0;color:#8c0808;font-size:25px;font-weight:700;'>Portal Santos Tech</p>");
+        html.Append("</td></tr>");
+        html.Append("<tr><td style='padding:28px 24px 12px;'>");
+        html.Append("<p style='margin:0 0 16px;color:#111827;font-size:16px;line-height:1.6;'>Use o codigo abaixo para concluir a verificacao da sua conta:</p>");
+        html.Append("<div style='margin:18px 0 22px;padding:18px 12px;border:1px dashed #14b8a6;border-radius:12px;background:#f0fdfa;text-align:center;'>");
+        html.Append("<span style='display:inline-block;letter-spacing:8px;font-size:34px;font-weight:700;color:#0f172a;'>");
+        html.Append(verificationCode);
+        html.Append("</span>");
+        html.Append("</div>");
+        html.Append("<p style='margin:0;color:#374151;font-size:14px;line-height:1.6;'>Este codigo expira em 10 minutos e pode ser usado apenas uma vez.</p>");
+        html.Append("</td></tr>");
+        html.Append("<tr><td style='padding:10px 24px 28px;'>");
+        html.Append("<p style='margin:0;color:#6b7280;font-size:12px;line-height:1.6;'>Se voce nao solicitou esta verificacao, ignore este email.</p>");
+        html.Append("</td></tr>");
+        html.Append("</table>");
+        html.Append("</td></tr>");
+        html.Append("</table>");
+        html.Append("</body>");
+        html.Append("</html>");
+
+        return html.ToString();
+    }
+
+    public async Task<bool> ConfirmEmailVerifyAsync(string email, string code)
+    {
+        var codeEntry = await _efDbContext.CodeEmails.FirstOrDefaultAsync(c => c.Email == email && c.Code == code);
+        if (codeEntry == null || codeEntry.CreatedAt.AddMinutes(10) < DateTime.UtcNow)
+        {
+            return false;
+        }
+
+        _efDbContext.CodeEmails.Remove(codeEntry);
+        await _efDbContext.SaveChangesAsync();
+
+        var user = await _efDbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+        if (user != null)
+        {
+            var config = await _efDbContext.Configs.FirstOrDefaultAsync(c => c.UserId == user.Id);
+            if (config != null)
+            {
+                config.ReceiveEmailNotifications = false;
+                _efDbContext.Configs.Update(config);
+                await _efDbContext.SaveChangesAsync();
             }
         }
 
-        return responseGrid;
+        return true;
     }
 }
