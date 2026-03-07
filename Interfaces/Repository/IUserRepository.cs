@@ -15,4 +15,6 @@ public interface IUserRepository
     Task<ConfigsDTO> UpdateConfigsAsync(UpdateConfigRequest request);
     Task<bool> SendEmailVerifyAsync(string email);
     Task<bool> ConfirmEmailVerifyAsync(string email, string code);
+    Task<PasswordRecoveryResult> SendPasswordRecoveryEmailAsync(string email);
+    Task UpdatePasswordHashAsync(string email, string? passwordHash);
 }

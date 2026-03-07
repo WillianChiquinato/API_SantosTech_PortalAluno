@@ -313,4 +313,25 @@ public class UserService : IUserService
             return CustomResponse<bool>.Fail("Ocorreu um erro", e.Message);
         }
     }
+
+    public async Task<CustomResponse<bool>> SendPasswordRecoveryEmailAsync(string email)
+    {
+        try
+        {
+            var result = await _userRepository.SendPasswordRecoveryEmailAsync(email);
+
+            if (result.Success && !string.IsNullOrWhiteSpace(result.PasswordRecoveryCode))
+            {
+                await _userRepository.UpdatePasswordHashAsync(email, ResolvePasswordHash(result.PasswordRecoveryCode));
+            }
+
+            return result.Success
+                ? CustomResponse<bool>.SuccessTrade(true)
+                : CustomResponse<bool>.Fail("Falha ao enviar email de recuperação de senha");
+        }
+        catch (Exception e)
+        {
+            return CustomResponse<bool>.Fail("Ocorreu um erro", e.Message);
+        }
+    }
 }

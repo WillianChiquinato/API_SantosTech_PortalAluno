@@ -16,4 +16,5 @@ public interface IUserService
     Task<CustomResponse<UpdateConfigRequest>> UpdateConfigsAsync(UpdateConfigRequest request);
     Task<CustomResponse<bool>> SendEmailVerifyAsync(string email);
     Task<CustomResponse<bool>> ConfirmEmailVerifyAsync(string email, string code);
+    Task<CustomResponse<bool>> SendPasswordRecoveryEmailAsync(string email);
 }

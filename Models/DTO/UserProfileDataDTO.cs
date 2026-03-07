@@ -30,3 +30,9 @@ public class BadgeDTO
     public string? Description { get; set; }
     public string? IconURL { get; set; }
 }
+
+public class PasswordRecoveryResult
+{
+    public bool Success { get; set; }
+    public string? PasswordRecoveryCode { get; set; }
+}

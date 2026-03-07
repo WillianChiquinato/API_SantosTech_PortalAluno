@@ -95,4 +95,12 @@ public class UserController : ControllerBase
         var response = await _userService.ConfirmEmailVerifyAsync(request.Email, request.Code);
         return response.Success ? Ok(response) : BadRequest(response);
     }
+
+    [HttpPost]
+    [Route("SendPasswordRecoveryEmail")]
+    public async Task<IActionResult> SendPasswordRecoveryEmail([FromBody] EmailRequest request)
+    {
+        var response = await _userService.SendPasswordRecoveryEmailAsync(request.Email);
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
 }
