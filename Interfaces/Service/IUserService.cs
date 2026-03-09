@@ -17,4 +17,5 @@ public interface IUserService
     Task<CustomResponse<bool>> SendEmailVerifyAsync(string email);
     Task<CustomResponse<bool>> ConfirmEmailVerifyAsync(string email, string code);
     Task<CustomResponse<bool>> SendPasswordRecoveryEmailAsync(string email);
+    Task<CustomResponse<IEnumerable<UserWithAbilityDTO>>> GetUsersWithAbilityAsync(IEnumerable<User> users);
 }

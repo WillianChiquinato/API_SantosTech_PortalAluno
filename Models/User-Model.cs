@@ -5,9 +5,9 @@ namespace API_PortalSantosTech.Models;
 
 public enum UserRole
 {
-    Student,
-    Teacher,
-    Admin
+    Student = 1,
+    Teacher = 2,
+    Admin = 3
 }
 
 [Table("user")]

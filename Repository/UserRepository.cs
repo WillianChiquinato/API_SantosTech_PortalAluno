@@ -313,4 +313,30 @@ public class UserRepository : IUserRepository
             await _efDbContext.SaveChangesAsync();
         }
     }
+
+    public async Task<IEnumerable<UserWithAbilityDTO>> GetUserAbilitiesAsync(int userId)
+    {
+        var user = await _efDbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null)
+        {
+            return Enumerable.Empty<UserWithAbilityDTO>();
+        }
+
+        var abilities = await _efDbContext.Configs
+            .Where(ua => ua.UserId == userId && ua.ReportFrequency)
+            .Select(ua => ua.User)
+            .ToListAsync();
+
+        return new List<UserWithAbilityDTO>
+        {
+            new UserWithAbilityDTO
+            {
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email,
+                Role = user.Role.ToString(),
+                Abilities = abilities.Select(a => a.Name).ToList()!
+            }
+        };
+    }
 }

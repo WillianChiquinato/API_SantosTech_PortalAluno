@@ -334,4 +334,32 @@ public class UserService : IUserService
             return CustomResponse<bool>.Fail("Ocorreu um erro", e.Message);
         }
     }
+
+    public async Task<CustomResponse<IEnumerable<UserWithAbilityDTO>>> GetUsersWithAbilityAsync(IEnumerable<User> users)
+    {
+        try 
+        {
+            var usersWithAbilities = new List<UserWithAbilityDTO>();
+
+            foreach (var user in users)
+            {
+                var abilities = await _userRepository.GetUserAbilitiesAsync(user.Id);
+
+                usersWithAbilities.Add(new UserWithAbilityDTO
+                {
+                    Id = user.Id,
+                    Name = user.Name,
+                    Email = user.Email,
+                    Role = user.Role.ToString(),
+                    Abilities = ["Relatório Semanal"]
+                });
+            }
+
+            return CustomResponse<IEnumerable<UserWithAbilityDTO>>.SuccessTrade(usersWithAbilities);
+        }
+        catch (Exception e)
+        {
+            return CustomResponse<IEnumerable<UserWithAbilityDTO>>.Fail("Ocorreu um erro", e.Message);
+        }
+    }
 }

@@ -9,6 +9,8 @@ using Microsoft.IdentityModel.Tokens;
 using API_PortalSantosTech.Services;
 using System.Threading.RateLimiting;
 using API_PortalSantosTech.Interfaces;
+using Hangfire;
+using Hangfire.PostgreSql;
 
 DotNetEnv.Env.Load();
 
@@ -38,6 +40,13 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<IEmailService, SendGridEmailService>();
+builder.Services.AddScoped<ReportService>();
+
+// Hangfire
+builder.Services.AddHangfire(config =>
+    config.UsePostgreSqlStorage(connectionString));
+
+builder.Services.AddHangfireServer();
 
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -132,6 +141,9 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 }
+
+app.UseHangfireDashboard();
+HangfireJobs.Register();
 
 app.UseRateLimiter();
 app.UseHttpsRedirection();

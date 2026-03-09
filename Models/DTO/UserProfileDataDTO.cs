@@ -36,3 +36,12 @@ public class PasswordRecoveryResult
     public bool Success { get; set; }
     public string? PasswordRecoveryCode { get; set; }
 }
+
+public class UserWithAbilityDTO
+{
+    public int Id { get; set; }
+    public string? Name { get; set; }
+    public string? Email { get; set; }
+    public string? Role { get; set; }
+    public List<string>? Abilities { get; set; }
+}

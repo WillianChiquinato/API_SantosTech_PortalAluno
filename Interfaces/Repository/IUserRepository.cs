@@ -17,4 +17,5 @@ public interface IUserRepository
     Task<bool> ConfirmEmailVerifyAsync(string email, string code);
     Task<PasswordRecoveryResult> SendPasswordRecoveryEmailAsync(string email);
     Task UpdatePasswordHashAsync(string email, string? passwordHash);
+    Task<IEnumerable<UserWithAbilityDTO>> GetUserAbilitiesAsync(int userId);
 }
