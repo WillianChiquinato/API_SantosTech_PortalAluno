@@ -268,6 +268,13 @@ public class ExerciseRepository : IExerciseRepository
     {
         await _efDbContext.UserExerciseFlows.AddRangeAsync(userExerciseFlows);
         await _efDbContext.SaveChangesAsync();
+
+        if (userExerciseFlows.Any())
+        {
+            await EnsureTypeThreeExercisesAtEndAsync(
+                userExerciseFlows.First().UserId,
+                userExerciseFlows.First().PhaseId);
+        }
     }
 
     public async Task<List<Exercise>> GetFlowWithExercisesAsync(int userId, int phaseId)
@@ -354,5 +361,170 @@ public class ExerciseRepository : IExerciseRepository
 
         //Salvar tudo junto
         await _efDbContext.SaveChangesAsync();
+
+        await EnsureTypeThreeExercisesAtEndAsync(userId, phaseId);
+    }
+
+    public async Task<int> SyncMainExercisesIntoExistingFlowsAsync(int phaseId)
+    {
+        var orderedMainExerciseIds = await _efDbContext.Exercises
+            .Where(e => e.PhaseId == phaseId && !e.IsDailyTask && e.Difficulty == DifficultyLevel.Normal)
+            .OrderBy(e => (int)e.TypeExercise == 3 ? 1 : 0)
+            .ThenBy(e => e.IndexOrder)
+            .Select(e => e.Id)
+            .ToListAsync();
+
+        if (!orderedMainExerciseIds.Any())
+            return 0;
+
+        var userIds = await _efDbContext.UserExerciseFlows
+            .Where(f => f.PhaseId == phaseId)
+            .Select(f => f.UserId)
+            .Distinct()
+            .ToListAsync();
+
+        if (!userIds.Any())
+            return 0;
+
+        var userMainFlowRows = await _efDbContext.UserExerciseFlows
+            .Where(f => f.PhaseId == phaseId && f.Origin == FlowOrigin.Main)
+            .Select(f => new { f.UserId, f.ExerciseId })
+            .ToListAsync();
+
+        var maxOrderByUser = await _efDbContext.UserExerciseFlows
+            .Where(f => f.PhaseId == phaseId)
+            .GroupBy(f => f.UserId)
+            .Select(g => new { UserId = g.Key, MaxOrder = g.Max(x => x.IndexOrder) })
+            .ToDictionaryAsync(x => x.UserId, x => x.MaxOrder);
+
+        var existingMainByUser = userMainFlowRows
+            .GroupBy(x => x.UserId)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.ExerciseId).ToHashSet());
+
+        var now = DateTime.UtcNow;
+        var flowsToInsert = new List<UserExerciseFlow>();
+        var touchedUsers = new HashSet<int>();
+
+        foreach (var userId in userIds)
+        {
+            var existingMain = existingMainByUser.GetValueOrDefault(userId, new HashSet<int>());
+
+            var missingMainIds = orderedMainExerciseIds
+                .Where(exerciseId => !existingMain.Contains(exerciseId))
+                .ToList();
+
+            if (!missingMainIds.Any())
+                continue;
+
+            var order = maxOrderByUser.GetValueOrDefault(userId, -1) + 1;
+
+            foreach (var exerciseId in missingMainIds)
+            {
+                flowsToInsert.Add(new UserExerciseFlow
+                {
+                    UserId = userId,
+                    PhaseId = phaseId,
+                    ExerciseId = exerciseId,
+                    IndexOrder = order++,
+                    Origin = FlowOrigin.Main,
+                    TriggeredByExerciseId = null,
+                    CreatedAt = now
+                });
+            }
+
+            touchedUsers.Add(userId);
+        }
+
+        if (!flowsToInsert.Any())
+            return 0;
+
+        await _efDbContext.UserExerciseFlows.AddRangeAsync(flowsToInsert);
+        await _efDbContext.SaveChangesAsync();
+
+        foreach (var userId in touchedUsers)
+        {
+            await EnsureTypeThreeExercisesAtEndAsync(userId, phaseId);
+        }
+
+        return flowsToInsert.Count;
+    }
+
+    public async Task<int> SyncMainExercisesForUserPhaseAsync(int userId, int phaseId)
+    {
+        var orderedMainExerciseIds = await _efDbContext.Exercises
+            .Where(e => e.PhaseId == phaseId && !e.IsDailyTask && e.Difficulty == DifficultyLevel.Normal)
+            .OrderBy(e => (int)e.TypeExercise == 3 ? 1 : 0)
+            .ThenBy(e => e.IndexOrder)
+            .Select(e => e.Id)
+            .ToListAsync();
+
+        if (!orderedMainExerciseIds.Any())
+            return 0;
+
+        var existingMainIds = await _efDbContext.UserExerciseFlows
+            .Where(f => f.UserId == userId && f.PhaseId == phaseId && f.Origin == FlowOrigin.Main)
+            .Select(f => f.ExerciseId)
+            .ToListAsync();
+
+        var existingMainSet = existingMainIds.ToHashSet();
+
+        var missingMainIds = orderedMainExerciseIds
+            .Where(exerciseId => !existingMainSet.Contains(exerciseId))
+            .ToList();
+
+        if (!missingMainIds.Any())
+            return 0;
+
+        var maxOrder = await _efDbContext.UserExerciseFlows
+            .Where(f => f.UserId == userId && f.PhaseId == phaseId)
+            .Select(f => (int?)f.IndexOrder)
+            .MaxAsync() ?? -1;
+
+        var order = maxOrder + 1;
+        var now = DateTime.UtcNow;
+
+        var flowsToInsert = missingMainIds
+            .Select(exerciseId => new UserExerciseFlow
+            {
+                UserId = userId,
+                PhaseId = phaseId,
+                ExerciseId = exerciseId,
+                IndexOrder = order++,
+                Origin = FlowOrigin.Main,
+                TriggeredByExerciseId = null,
+                CreatedAt = now
+            })
+            .ToList();
+
+        await _efDbContext.UserExerciseFlows.AddRangeAsync(flowsToInsert);
+        await _efDbContext.SaveChangesAsync();
+
+        await EnsureTypeThreeExercisesAtEndAsync(userId, phaseId);
+
+        return flowsToInsert.Count;
+    }
+
+    private async Task EnsureTypeThreeExercisesAtEndAsync(int userId, int phaseId)
+    {
+        var orderedFlow = await _efDbContext.UserExerciseFlows
+            .Where(f => f.UserId == userId && f.PhaseId == phaseId)
+            .Include(f => f.Exercise)
+            .OrderBy(f => f.Exercise != null && (int)f.Exercise.TypeExercise == 3 ? 1 : 0)
+            .ThenBy(f => f.IndexOrder)
+            .ToListAsync();
+
+        var hasChanges = false;
+
+        for (int i = 0; i < orderedFlow.Count; i++)
+        {
+            if (orderedFlow[i].IndexOrder == i)
+                continue;
+
+            orderedFlow[i].IndexOrder = i;
+            hasChanges = true;
+        }
+
+        if (hasChanges)
+            await _efDbContext.SaveChangesAsync();
     }
 }

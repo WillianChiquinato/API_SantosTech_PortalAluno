@@ -70,4 +70,12 @@ public class ExerciseController : ControllerBase
 
         return Ok(new { Success = true, Message = "Respostas enviadas com sucesso." });
     }
+
+    [HttpPost]
+    [Route("SyncMainFlowByPhase")]
+    public async Task<IActionResult> SyncMainFlowByPhase([FromQuery] int phaseId)
+    {
+        var response = await _exerciseService.SyncMainExercisesIntoPhaseFlowsAsync(phaseId);
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
 }

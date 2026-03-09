@@ -75,6 +75,9 @@ public class ClassService : IClassService
                 var statusProgress = await _progressStudentPhaseRepository
                     .GetProgressByUserIdAndPhaseIdAsync(userId, phase.Id);
 
+                await _exerciseRepository
+                    .SyncMainExercisesForUserPhaseAsync(userId, phase.Id);
+
                 var flow = await _exerciseRepository
                         .GetByUserAndPhaseOrderedAsync(userId, phase.Id);
 
@@ -203,7 +206,9 @@ public class ClassService : IClassService
 
         var mainExercises = exercises
             .Where(e => e.Difficulty == DifficultyLevel.Normal)
-            .OrderBy(e => e.IndexOrder)
+            // Camada a mais de proteção para a prova da fase.
+            .OrderBy(e => (int)e.TypeExercise == 3 ? 1 : 0)
+            .ThenBy(e => e.IndexOrder)
             .ToList();
 
         if (!mainExercises.Any())

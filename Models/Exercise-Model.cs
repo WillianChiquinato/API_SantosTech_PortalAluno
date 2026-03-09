@@ -6,7 +6,8 @@ namespace API_PortalSantosTech.Models;
 public enum DifficultyLevel
 {
     Normal = 1,
-    Lower = 2
+    Lower = 2,
+    ProofTest = 3
 }
 
 public enum ExerciseType

@@ -19,4 +19,6 @@ public interface IExerciseRepository
     Task CreateUserExerciseFlowAsync(List<UserExerciseFlow> userExerciseFlows);
     Task<List<Exercise>> GetFlowWithExercisesAsync(int userId, int phaseId);
     Task InsertLowerExercisesAsync(int userId, int phaseId, int exerciseId);
+    Task<int> SyncMainExercisesForUserPhaseAsync(int userId, int phaseId);
+    Task<int> SyncMainExercisesIntoExistingFlowsAsync(int phaseId);
 }

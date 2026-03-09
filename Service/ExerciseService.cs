@@ -123,4 +123,18 @@ public class ExerciseService : IExerciseService
             _logger.LogError(ex, "Erro ao inserir exercícios inferiores para o usuário {UserId}, fase {PhaseId} e exercício {ExerciseId}", userId, phaseId, exerciseId);
         }
     }
+
+    public async Task<CustomResponse<int>> SyncMainExercisesIntoPhaseFlowsAsync(int phaseId)
+    {
+        try
+        {
+            var insertedCount = await _exerciseRepository.SyncMainExercisesIntoExistingFlowsAsync(phaseId);
+            return CustomResponse<int>.SuccessTrade(insertedCount);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao sincronizar exercícios MAIN para a fase {PhaseId}", phaseId);
+            return CustomResponse<int>.Fail("Ocorreu um erro ao sincronizar o fluxo MAIN da fase");
+        }
+    }
 }
