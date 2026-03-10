@@ -19,7 +19,6 @@ public class ReportService
 
     public async Task SendWeeklyReport()
     {
-        //Testes.
         var start = DateTime.UtcNow.AddDays(-7);
 
         var data = await _context.Users

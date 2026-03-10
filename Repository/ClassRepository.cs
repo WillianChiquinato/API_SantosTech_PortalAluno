@@ -52,6 +52,7 @@ public class ClassRepository : IClassRepository
         var phases = await _efDbContext.Phases
             .AsNoTracking()
             .Where(i => i.ModuleId == moduleId)
+            .OrderBy(index => index.IndexOrder)
             .ToListAsync();
 
         var islands = phases.Select(i =>
