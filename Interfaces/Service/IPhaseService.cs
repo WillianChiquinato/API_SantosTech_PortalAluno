@@ -8,5 +8,5 @@ public interface IPhaseService
 {
     Task<CustomResponse<IEnumerable<Phase>>> GetAllAsync();
     Task<CustomResponse<Phase>> GetByIdAsync(int id);
-    Task<CustomResponse<CurrentPhaseDTO>> GetCurrentPhaseUserAsync(int userId);
+    Task<CustomResponse<CurrentModuleDTO>> GetCurrentModuleUserAsync(int userId);
 }

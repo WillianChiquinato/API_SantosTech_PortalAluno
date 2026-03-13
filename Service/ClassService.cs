@@ -89,16 +89,22 @@ public class ClassService : IClassService
                         .GetByUserAndPhaseOrderedAsync(userId, phase.Id);
                 }
 
-                var flowExerciseIds = flow
-                    .Select(f => f.ExerciseId)
-                    .ToList();
-
                 var flowExercises = await _exerciseRepository
                     .GetFlowWithExercisesAsync(userId, phase.Id);
+
+                var nonDailyContainerTasks = await _exerciseRepository
+                    .GetNonDailyContainerTasksByPhaseAsync(phase.Id);
 
                 var exercisesById = flowExercises
                     .DistinctBy(e => e.Id)
                     .ToDictionary(e => e.Id);
+
+                var flowByExerciseId = flow
+                    .GroupBy(f => f.ExerciseId)
+                    .ToDictionary(g => g.Key, g => g.OrderBy(x => x.IndexOrder).First());
+
+                var flowOrderById = flow
+                    .ToDictionary(item => item.Id, item => item.IndexOrder);
 
                 var flowIds = flow.Select(f => f.Id).ToList();
                 var phaseAnswers = userAnswers
@@ -110,57 +116,197 @@ public class ClassService : IClassService
                     .Select(g => g.OrderByDescending(x => x.SubmittedAt).First())
                     .ToList();
 
-                var answersByExercise = latestAnswers
+                var answersByFlowId = latestAnswers
                     .ToDictionary(a => a.UserExerciseFlowId);
 
-                var blipsList = new List<BlipsDTO>();
+                // Lower exercises agrupados pelo exercício que os originou
+                var lowerFlowByTriggeredId = flow
+                    .Where(f => f.Origin == FlowOrigin.Lower && f.TriggeredByExerciseId.HasValue)
+                    .GroupBy(f => f.TriggeredByExerciseId!.Value)
+                    .ToDictionary(g => g.Key, g => g.OrderBy(x => x.IndexOrder).ToList());
 
-                foreach (var flowItem in flow.OrderBy(f => f.IndexOrder))
+                // ExerciseIds que pertencem a algum container (para filtrar o fallback)
+                var containerTaskExerciseIdSet = nonDailyContainerTasks
+                    .Select(t => t.ExerciseId)
+                    .ToHashSet();
+
+                var blipsList = nonDailyContainerTasks
+                    .GroupBy(task => new { task.Name, task.PhaseId })
+                    .Select(group =>
+                    {
+                        var flowItems = group
+                            .Select(task => flowByExerciseId.GetValueOrDefault(task.ExerciseId))
+                            .Where(flowItem => flowItem != null)
+                            .Cast<UserExerciseFlow>()
+                            .OrderBy(flowItem => flowItem.IndexOrder)
+                            .ToList();
+
+                        if (!flowItems.Any())
+                            return null;
+
+                        // Lower exercises cujo TriggeredByExerciseId pertence a este container
+                        var groupExerciseIds = group.Select(task => task.ExerciseId).ToHashSet();
+                        var lowerItems = groupExerciseIds
+                            .SelectMany(eid => lowerFlowByTriggeredId.GetValueOrDefault(eid, new List<UserExerciseFlow>()))
+                            .OrderBy(f => f.IndexOrder)
+                            .ToList();
+
+                        var allFlowItems = flowItems.Concat(lowerItems)
+                            .OrderBy(f => f.IndexOrder)
+                            .ToList();
+
+                        var firstFlowItem = allFlowItems.First();
+                        var allAnswered = allFlowItems.All(flowItem => answersByFlowId.ContainsKey(flowItem.Id));
+
+                        var containerState = allAnswered
+                            ? "Concluído"
+                            : "Não iniciado";
+
+                        var containerExercises = allFlowItems
+                            .Select(flowItem =>
+                            {
+                                if (!exercisesById.TryGetValue(flowItem.ExerciseId, out var exercise))
+                                    return null;
+
+                                var exerciseState = answersByFlowId.TryGetValue(flowItem.Id, out var answer)
+                                    ? answer.IsCorrect ? "Correto" : "Errou"
+                                    : "Não iniciado";
+
+                                return new ExercisesContentDTO
+                                {
+                                    Exercise = new ExerciseDTO
+                                    {
+                                        Id = exercise.Id,
+                                        Title = exercise.Title,
+                                        Description = exercise.Description,
+                                        VideoUrl = exercise.VideoUrl,
+                                        PointsRedeem = exercise.PointsRedeem,
+                                        TermAt = exercise.TermAt,
+                                        TypeExercise = exercise.TypeExercise,
+                                        Difficulty = exercise.Difficulty,
+                                        IndexOrder = exercise.IndexOrder,
+                                        IsFinalExercise = exercise.IsFinalExercise,
+                                        ExercisePeriod = exercise.ExercisePeriod
+                                    },
+                                    Origin = flowItem.Origin,
+                                    StateExercise = exerciseState,
+                                    UserContainerExerciseFlowId = flowItem.Id
+                                };
+                            })
+                            .Where(e => e != null)
+                            .Cast<ExercisesContentDTO>()
+                            .OrderBy(e => flowOrderById.GetValueOrDefault(e.UserContainerExerciseFlowId ?? -1))
+                            .ToList();
+
+                        if (!containerExercises.Any())
+                            return null;
+
+                        return new
+                        {
+                            FirstOrder = firstFlowItem.IndexOrder,
+                            Blip = new BlipsDTO
+                            {
+                                ContainerExercise = new ContainerExerciseDTO
+                                {
+                                    Id = group.Min(task => task.Id),
+                                    Title = group.Key.Name,
+                                    ContainerDateTarget = group.Min(task => task.ContainerDateTargetInt),
+                                    Exercises = containerExercises
+                                },
+                                StateContainer = containerState,
+                                PhaseId = firstFlowItem.PhaseId
+                            }
+                        };
+                    })
+                    .Where(item => item != null)
+                    .OrderBy(item => item!.FirstOrder)
+                    .Select(item => item!.Blip)
+                    .ToList();
+
+                // Mapeados: exercícios de container + lowers filhos deles
+                var mappedExerciseIds = flow
+                    .Where(f => containerTaskExerciseIdSet.Contains(f.ExerciseId) ||
+                                (f.Origin == FlowOrigin.Lower &&
+                                 f.TriggeredByExerciseId.HasValue &&
+                                 containerTaskExerciseIdSet.Contains(f.TriggeredByExerciseId.Value)))
+                    .Select(f => f.ExerciseId)
+                    .ToHashSet();
+
+                var fallbackBlips = flow
+                    .Where(flowItem => !mappedExerciseIds.Contains(flowItem.ExerciseId))
+                    .OrderBy(flowItem => flowItem.IndexOrder)
+                    .Select(flowItem =>
+                    {
+                        if (!exercisesById.TryGetValue(flowItem.ExerciseId, out var exercise))
+                            return null;
+
+                        var hasAnswer = answersByFlowId.TryGetValue(flowItem.Id, out var fallbackAnswer);
+                        var fallbackExerciseState = hasAnswer
+                            ? fallbackAnswer!.IsCorrect ? "Correto" : "Errou"
+                            : "Não iniciado";
+                        var fallbackContainerState = hasAnswer ? "Concluído" : "Não iniciado";
+
+                        return new BlipsDTO
+                        {
+                            ContainerExercise = new ContainerExerciseDTO
+                            {
+                                Id = flowItem.Id,
+                                Title = exercise.Title,
+                                Exercises = new List<ExercisesContentDTO>
+                                {
+                                    new ExercisesContentDTO
+                                    {
+                                        Exercise = new ExerciseDTO
+                                        {
+                                            Id = exercise.Id,
+                                            Title = exercise.Title,
+                                            Description = exercise.Description,
+                                            VideoUrl = exercise.VideoUrl,
+                                            PointsRedeem = exercise.PointsRedeem,
+                                            TermAt = exercise.TermAt,
+                                            TypeExercise = exercise.TypeExercise,
+                                            Difficulty = exercise.Difficulty,
+                                            IndexOrder = exercise.IndexOrder,
+                                            IsFinalExercise = exercise.IsFinalExercise,
+                                            ExercisePeriod = exercise.ExercisePeriod
+                                        },
+                                        Origin = flowItem.Origin,
+                                        StateExercise = fallbackExerciseState,
+                                        UserContainerExerciseFlowId = flowItem.Id
+                                    }
+                                }
+                            },
+                            StateContainer = fallbackContainerState,
+                            PhaseId = flowItem.PhaseId
+                        };
+                    })
+                    .Where(blip => blip != null)
+                    .Cast<BlipsDTO>()
+                    .ToList();
+
+                blipsList.AddRange(fallbackBlips);
+                blipsList = blipsList
+                    .OrderBy(blip => blip.ContainerExercise.Exercises
+                        .Min(e => flowOrderById.GetValueOrDefault(e.UserContainerExerciseFlowId ?? -1, int.MaxValue)))
+                    .ToList();
+
+                var firstNotStartedExercise = blipsList
+                    .SelectMany(blip => blip.ContainerExercise.Exercises)
+                    .Where(exercise => exercise.StateExercise == "Não iniciado")
+                    .OrderBy(exercise => flowOrderById.GetValueOrDefault(exercise.UserContainerExerciseFlowId ?? -1, int.MaxValue))
+                    .FirstOrDefault();
+
+                if (firstNotStartedExercise != null)
                 {
-                    if (!exercisesById.TryGetValue(flowItem.ExerciseId, out var exercise))
-                        continue;
+                    firstNotStartedExercise.StateExercise = "Atual";
 
-                    string state;
+                    var currentBlip = blipsList.FirstOrDefault(blip =>
+                        blip.ContainerExercise.Exercises.Any(exercise =>
+                            exercise.UserContainerExerciseFlowId == firstNotStartedExercise.UserContainerExerciseFlowId));
 
-                    if (!answersByExercise.TryGetValue(flowItem.Id, out var answer))
-                    {
-                        state = "Não iniciado";
-                    }
-                    else
-                    {
-                        state = answer.IsCorrect ? "Correto" : "Errou";
-                    }
-
-                    var exerciseDto = new ExerciseDTO
-                    {
-                        Id = exercise.Id,
-                        Title = exercise.Title,
-                        Description = exercise.Description,
-                        VideoUrl = exercise.VideoUrl,
-                        PointsRedeem = exercise.PointsRedeem,
-                        TermAt = exercise.TermAt,
-                        TypeExercise = exercise.TypeExercise,
-                        Difficulty = exercise.Difficulty,
-                        IndexOrder = exercise.IndexOrder,
-                        IsFinalExercise = exercise.IsFinalExercise,
-                        ExercisePeriod = exercise.ExercisePeriod
-                    };
-
-                    blipsList.Add(new BlipsDTO
-                    {
-                        Exercise = exerciseDto,
-                        State = state,
-                        Origin = flowItem.Origin,
-                        PhaseId = flowItem.PhaseId,
-                        UserExerciseFlowId = flowItem.Id
-                    });
+                    if (currentBlip != null && currentBlip.StateContainer != "Concluído")
+                        currentBlip.StateContainer = "Atual";
                 }
-
-                var firstNotStarted = blipsList
-                    .FirstOrDefault(b => b.State == "Não iniciado");
-
-                if (firstNotStarted != null)
-                    firstNotStarted.State = "Atual";
 
                 finalResult.Add(new IslandDTO
                 {
@@ -201,34 +347,76 @@ public class ClassService : IClassService
 
     public async Task CreateInitialFlowAsync(int userId, int phaseId)
     {
-        var exercises = await _exerciseRepository
+        var containers = await _exerciseRepository
+            .GetContainerTasksByPhaseIdAsync(phaseId);
+
+        var phaseExercises = await _exerciseRepository
             .GetExercisesByPhaseId(phaseId);
 
-        var mainExercises = exercises
-            .Where(e => e.Difficulty == DifficultyLevel.Normal)
-            // Camada a mais de proteção para a prova da fase.
-            .OrderBy(e => (int)e.TypeExercise == 3 ? 1 : 0)
-            .ThenBy(e => e.IndexOrder)
+        var nonDailyContainers = containers
+            .Where(c => !c.IsDailyTask)
             .ToList();
 
-        if (!mainExercises.Any())
-            return;
-
         int order = 0;
+        var flows = new List<UserExerciseFlow>();
+        var insertedExerciseIds = new HashSet<int>();
 
-        var initialFlow = mainExercises
-            .Select(e => new UserExerciseFlow
+        var groupedContainers = nonDailyContainers
+            .GroupBy(c => c.Name ?? string.Empty)
+            .OrderBy(g => g.Min(x => x.ContainerDateTargetInt))
+            .ThenBy(g => g.Min(x => x.Id));
+
+        foreach (var containerGroup in groupedContainers)
+        {
+            var containerExercises = containerGroup
+                .OrderBy(c => c.Exercise!.IndexOrder);
+
+            foreach (var container in containerExercises)
+            {
+                var exercise = container.Exercise;
+
+                if (exercise!.Difficulty != DifficultyLevel.Normal)
+                    continue;
+
+                if (!insertedExerciseIds.Add(exercise.Id))
+                    continue;
+
+                flows.Add(new UserExerciseFlow
+                {
+                    UserId = userId,
+                    PhaseId = phaseId,
+                    ExerciseId = exercise.Id,
+                    IndexOrder = order++,
+                    Origin = FlowOrigin.Main,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
+
+        var standaloneExercises = phaseExercises
+            .Where(e => e.Difficulty != DifficultyLevel.Lower)
+            .Where(e => !insertedExerciseIds.Contains(e.Id))
+            .OrderBy(e => e.Difficulty == DifficultyLevel.ProofTest ? 1 : 0)
+            .ThenBy(e => e.IndexOrder)
+            .ThenBy(e => e.Id)
+            .ToList();
+
+        foreach (var exercise in standaloneExercises)
+        {
+            flows.Add(new UserExerciseFlow
             {
                 UserId = userId,
                 PhaseId = phaseId,
-                ExerciseId = e.Id,
+                ExerciseId = exercise.Id,
                 IndexOrder = order++,
                 Origin = FlowOrigin.Main,
-                TriggeredByExerciseId = null,
                 CreatedAt = DateTime.UtcNow
-            })
-            .ToList();
+            });
+        }
 
-        await _exerciseRepository.CreateUserExerciseFlowAsync(initialFlow);
+        if (!flows.Any())
+            return;
+
+        await _exerciseRepository.CreateUserExerciseFlowAsync(flows);
     }
 }

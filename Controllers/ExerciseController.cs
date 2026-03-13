@@ -78,4 +78,12 @@ public class ExerciseController : ControllerBase
         var response = await _exerciseService.SyncMainExercisesIntoPhaseFlowsAsync(phaseId);
         return response.Success ? Ok(response) : BadRequest(response);
     }
+
+    [HttpGet]
+    [Route("VerifyExistingAnswers")]
+    public async Task<IActionResult> VerifyExistingAnswers([FromQuery] int exerciseId, [FromQuery] int userId)
+    {
+        var response = await _exerciseService.VerifyExistingAnswersAsync(exerciseId, userId);
+        return response.Success ? Ok(response) : NotFound(response);
+    }
 }

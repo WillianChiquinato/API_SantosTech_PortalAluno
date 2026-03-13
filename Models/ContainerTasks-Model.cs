@@ -3,8 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace API_PortalSantosTech.Models;
 
-[Table("daily_tasks")]
-public class DailyTask
+[Table("container_tasks")]
+public class ContainerTask
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -19,6 +19,12 @@ public class DailyTask
 
     [Column("phase_id")]
     public int PhaseId { get; set; }
+
+    [Column("is_daily_task")]
+    public bool IsDailyTask { get; set; }
+
+    [Column("container_date_target_int")]
+    public int? ContainerDateTargetInt { get; set; }
 
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }

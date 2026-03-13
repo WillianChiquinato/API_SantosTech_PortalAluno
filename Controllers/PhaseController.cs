@@ -31,10 +31,10 @@ public class PhaseController : ControllerBase
     }
 
     [HttpGet]
-    [Route("GetCurrentPhaseUser")]
-    public async Task<IActionResult> GetCurrentPhaseUser([FromQuery] int userId)
+    [Route("GetCurrentModuleUser")]
+    public async Task<IActionResult> GetCurrentModuleUser([FromQuery] int userId)
     {
-        var response = await _phaseService.GetCurrentPhaseUserAsync(userId);
+        var response = await _phaseService.GetCurrentModuleUserAsync(userId);
         return response.Success ? Ok(response) : NotFound(response);
     }
 }

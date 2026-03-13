@@ -11,3 +11,8 @@ public class ExerciseAnswerDTO
     public string Answer { get; set; } = string.Empty;
     public DateTime SubmittedAt { get; set; }
 }
+
+public class VerifyDTO
+{
+    public bool ExistingAnswers { get; set; }
+}

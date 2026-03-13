@@ -14,11 +14,25 @@ public class IslandDTO
 
 public class BlipsDTO
 {
-    public ExerciseDTO Exercise { get; set; } = new();
-    public string? State { get; set; }
-    public FlowOrigin? Origin { get; set; }
+    public ContainerExerciseDTO ContainerExercise { get; set; } = new();
+    public string? StateContainer { get; set; }
     public int? PhaseId { get; set; }
-    public int? UserExerciseFlowId { get; set; }
+}
+
+public class ContainerExerciseDTO
+{
+    public int Id { get; set; }
+    public string? Title { get; set; }
+    public int? ContainerDateTarget { get; set; }
+    public List<ExercisesContentDTO> Exercises { get; set; } = new();
+}
+
+public class ExercisesContentDTO
+{
+    public ExerciseDTO Exercise { get; set; } = new();
+    public FlowOrigin? Origin { get; set; }
+    public string? StateExercise { get; set; }
+    public int? UserContainerExerciseFlowId { get; set; }
 }
 
 public class IslandPhaseDTO

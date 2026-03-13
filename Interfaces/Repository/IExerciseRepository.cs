@@ -18,7 +18,10 @@ public interface IExerciseRepository
     Task<List<UserExerciseFlow>> GetByUserAndPhaseOrderedAsync(int userId, int phaseId);
     Task CreateUserExerciseFlowAsync(List<UserExerciseFlow> userExerciseFlows);
     Task<List<Exercise>> GetFlowWithExercisesAsync(int userId, int phaseId);
-    Task InsertLowerExercisesAsync(int userId, int phaseId, int exerciseId);
+    Task<List<ContainerTask>> GetNonDailyContainerTasksByPhaseAsync(int phaseId);
+    Task InsertLowerExercisesAsync(int userId, int phaseId, int exerciseId, int? userExerciseFlowId);
     Task<int> SyncMainExercisesForUserPhaseAsync(int userId, int phaseId);
     Task<int> SyncMainExercisesIntoExistingFlowsAsync(int phaseId);
+    Task<bool> VerifyExistingAnswersAsync(int exerciseId, int userId);
+    Task<List<ContainerTask>> GetContainerTasksByPhaseIdAsync(int phaseId);
 }

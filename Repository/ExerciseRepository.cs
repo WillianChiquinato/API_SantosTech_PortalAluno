@@ -28,8 +28,8 @@ public class ExerciseRepository : IExerciseRepository
 
     public async Task<List<ExerciseDailyTasksDTO>> GetDailyTasksForPhaseAsync(int phaseId, int userId)
     {
-        var tasksContainer = await _efDbContext.DailyTasks
-            .Where(dt => dt.PhaseId == phaseId)
+        var tasksContainer = await _efDbContext.ContainerTasks
+            .Where(dt => dt.PhaseId == phaseId && dt.IsDailyTask)
             .AsNoTracking()
             .ToListAsync();
 
@@ -125,7 +125,7 @@ public class ExerciseRepository : IExerciseRepository
 
     public Task<List<ExerciseAnswerDTO>> GetDailyExercisesAnswersForPhaseAsync(int phaseId, int userId)
     {
-        var exerciseIds = _efDbContext.DailyTasks
+        var exerciseIds = _efDbContext.ContainerTasks
             .Where(dt => dt.PhaseId == phaseId)
             .Select(dt => dt.ExerciseId)
             .Distinct()
@@ -285,14 +285,22 @@ public class ExerciseRepository : IExerciseRepository
             .OrderBy(uef => uef.IndexOrder)
             .AsNoTracking()
             .ToListAsync();
-    
+
         return userExerciseFlows
             .Where(uef => uef.Exercise != null)
             .Select(uef => uef.Exercise!)
             .ToList();
     }
 
-    public async Task InsertLowerExercisesAsync(int userId, int phaseId, int mainExerciseId)
+    public Task<List<ContainerTask>> GetNonDailyContainerTasksByPhaseAsync(int phaseId)
+    {
+        return _efDbContext.ContainerTasks
+            .Where(ct => ct.PhaseId == phaseId && !ct.IsDailyTask)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    public async Task InsertLowerExercisesAsync(int userId, int phaseId, int mainExerciseId, int? userExerciseFlowId)
     {
         var alreadyInserted = await _efDbContext.UserExerciseFlows
             .AnyAsync(f =>
@@ -321,11 +329,25 @@ public class ExerciseRepository : IExerciseRepository
             .Take(quantity)
             .ToList();
 
-        var mainFlow = await _efDbContext.UserExerciseFlows
-            .FirstOrDefaultAsync(f =>
-                f.UserId == userId &&
-                f.PhaseId == phaseId &&
-                f.ExerciseId == mainExerciseId);
+        UserExerciseFlow? mainFlow = null;
+
+        if (userExerciseFlowId.HasValue)
+        {
+            mainFlow = await _efDbContext.UserExerciseFlows
+                .FirstOrDefaultAsync(f =>
+                    f.Id == userExerciseFlowId.Value &&
+                    f.UserId == userId &&
+                    f.PhaseId == phaseId);
+        }
+
+        if (mainFlow == null)
+        {
+            mainFlow = await _efDbContext.UserExerciseFlows
+                .FirstOrDefaultAsync(f =>
+                    f.UserId == userId &&
+                    f.PhaseId == phaseId &&
+                    f.ExerciseId == mainExerciseId);
+        }
 
         if (mainFlow == null)
             return;
@@ -367,12 +389,7 @@ public class ExerciseRepository : IExerciseRepository
 
     public async Task<int> SyncMainExercisesIntoExistingFlowsAsync(int phaseId)
     {
-        var orderedMainExerciseIds = await _efDbContext.Exercises
-            .Where(e => e.PhaseId == phaseId && !e.IsDailyTask && e.Difficulty == DifficultyLevel.Normal)
-            .OrderBy(e => (int)e.TypeExercise == 3 ? 1 : 0)
-            .ThenBy(e => e.IndexOrder)
-            .Select(e => e.Id)
-            .ToListAsync();
+        var orderedMainExerciseIds = await GetOrderedMainExerciseIdsByContainerAsync(phaseId);
 
         if (!orderedMainExerciseIds.Any())
             return 0;
@@ -451,12 +468,7 @@ public class ExerciseRepository : IExerciseRepository
 
     public async Task<int> SyncMainExercisesForUserPhaseAsync(int userId, int phaseId)
     {
-        var orderedMainExerciseIds = await _efDbContext.Exercises
-            .Where(e => e.PhaseId == phaseId && !e.IsDailyTask && e.Difficulty == DifficultyLevel.Normal)
-            .OrderBy(e => (int)e.TypeExercise == 3 ? 1 : 0)
-            .ThenBy(e => e.IndexOrder)
-            .Select(e => e.Id)
-            .ToListAsync();
+        var orderedMainExerciseIds = await GetOrderedMainExerciseIdsByContainerAsync(phaseId);
 
         if (!orderedMainExerciseIds.Any())
             return 0;
@@ -509,7 +521,7 @@ public class ExerciseRepository : IExerciseRepository
         var orderedFlow = await _efDbContext.UserExerciseFlows
             .Where(f => f.UserId == userId && f.PhaseId == phaseId)
             .Include(f => f.Exercise)
-            .OrderBy(f => f.Exercise != null && (int)f.Exercise.TypeExercise == 3 ? 1 : 0)
+            .OrderBy(f => f.Exercise != null && f.Exercise.Difficulty == DifficultyLevel.ProofTest ? 1 : 0)
             .ThenBy(f => f.IndexOrder)
             .ToListAsync();
 
@@ -526,5 +538,64 @@ public class ExerciseRepository : IExerciseRepository
 
         if (hasChanges)
             await _efDbContext.SaveChangesAsync();
+    }
+
+    private async Task<List<int>> GetOrderedMainExerciseIdsByContainerAsync(int phaseId)
+    {
+        var phaseMainExercises = await _efDbContext.Exercises
+            .Where(e => e.PhaseId == phaseId && !e.IsDailyTask && e.Difficulty != DifficultyLevel.Lower)
+            .AsNoTracking()
+            .ToListAsync();
+
+        if (!phaseMainExercises.Any())
+            return new List<int>();
+
+        var containerRows = await _efDbContext.ContainerTasks
+            .Where(ct => ct.PhaseId == phaseId && !ct.IsDailyTask)
+            .Include(ct => ct.Exercise)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var containerOrderedIds = containerRows
+            .Where(ct => ct.Exercise != null && ct.Exercise.Difficulty != DifficultyLevel.Lower)
+            .GroupBy(ct => ct.Name ?? string.Empty)
+            .OrderBy(g => g.Min(x => x.ContainerDateTargetInt))
+            .ThenBy(g => g.Min(x => x.Id))
+            .SelectMany(g => g
+                .OrderBy(x => x.Exercise!.IndexOrder)
+                .ThenBy(x => x.ExerciseId)
+                .Select(x => x.ExerciseId))
+            .Distinct()
+            .ToList();
+
+        var containerIdSet = containerOrderedIds.ToHashSet();
+
+        var standaloneOrderedIds = phaseMainExercises
+            .Where(e => !containerIdSet.Contains(e.Id))
+            .OrderBy(e => e.Difficulty == DifficultyLevel.ProofTest ? 1 : 0)
+            .ThenBy(e => e.IndexOrder)
+            .ThenBy(e => e.Id)
+            .Select(e => e.Id)
+            .ToList();
+
+        return containerOrderedIds
+            .Concat(standaloneOrderedIds)
+            .Distinct()
+            .ToList();
+    }
+
+    public async Task<bool> VerifyExistingAnswersAsync(int exerciseId, int userId)
+    {
+        return await _efDbContext.Answers
+            .AnyAsync(a => a.ExerciseId == exerciseId && a.UserId == userId);
+    }
+
+    public Task<List<ContainerTask>> GetContainerTasksByPhaseIdAsync(int phaseId)
+    {
+        return _efDbContext.ContainerTasks
+            .Where(ct => ct.PhaseId == phaseId)
+            .Include(ct => ct.Exercise)
+            .AsNoTracking()
+            .ToListAsync();
     }
 }

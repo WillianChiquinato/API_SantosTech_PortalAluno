@@ -51,7 +51,7 @@ public class PhaseService : IPhaseService
         }
     }
     
-    public async Task<CustomResponse<CurrentPhaseDTO>> GetCurrentPhaseUserAsync(int userId)
+    public async Task<CustomResponse<CurrentModuleDTO>> GetCurrentModuleUserAsync(int userId)
     {
         try
         {
@@ -60,26 +60,20 @@ public class PhaseService : IPhaseService
 
             var currentModuleClass = await _classRepository.GetCurrentModuleByClassIdAsync(GetClassInUser?.Id ?? 0);
             var totalPhasesPerModule = await _phaseRepository.GetTotalPhasesByModuleIdAsync(currentModuleClass?.Id ?? 0);
-
-            var result = await _phaseRepository.GetCurrentPhaseModuleUserAsync(GetClassInUser?.CurrentModuleId ?? 0);
             
-            var phaseUserDto = new CurrentPhaseDTO
+            var phaseUserDto = new CurrentModuleDTO
             {
-                Id = result?.Id ?? 0,
-                Name = result?.Name ?? "Nenhuma fase atrelada",
-                Module = new CurrentModuleDTO
-                {
-                    Id = GetClassInUser?.CurrentModuleId ?? 0,
-                    Name = currentModuleClass?.Name ?? "No current module",
-                    Description = currentModuleClass?.Description ?? "No description available"
-                }
+                Id = GetClassInUser?.CurrentModuleId ?? 0,
+                Name = currentModuleClass?.Name ?? "No current module",
+                Description = currentModuleClass?.Description ?? "No description available",
+                TotalPhases = totalPhasesPerModule
             };
-            return CustomResponse<CurrentPhaseDTO>.SuccessTrade(phaseUserDto, totalRows: totalPhasesPerModule);
+            return CustomResponse<CurrentModuleDTO>.SuccessTrade(phaseUserDto, totalRows: totalPhasesPerModule);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching current phase for user {UserId}", userId);
-            return CustomResponse<CurrentPhaseDTO>.Fail("An error occurred while fetching the current phase for the user.");
+            _logger.LogError(ex, "Error fetching current module for user {UserId}", userId);
+            return CustomResponse<CurrentModuleDTO>.Fail("An error occurred while fetching the current module for the user.");
         }
     }
 }

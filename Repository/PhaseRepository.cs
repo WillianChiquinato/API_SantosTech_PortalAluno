@@ -28,6 +28,7 @@ public class PhaseRepository : IPhaseRepository
     {
         return _efDbContext.Phases
             .AsNoTracking()
+            .OrderBy(p => p.IndexOrder)
             .FirstOrDefaultAsync(p => p.ModuleId == moduleId);
     }
 

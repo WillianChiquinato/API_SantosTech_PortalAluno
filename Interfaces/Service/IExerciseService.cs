@@ -12,4 +12,5 @@ public interface IExerciseService
     Task<CustomResponse<IEnumerable<QuestionOptionsDTO>>> GetQuestionsOptionsForExerciseAsync(int exerciseId);
     Task<CustomResponse<bool>> SubmitExerciseAnswersAsync(ExerciseSubmissionDTO submission);
     Task<CustomResponse<int>> SyncMainExercisesIntoPhaseFlowsAsync(int phaseId);
+    Task<CustomResponse<VerifyDTO>> VerifyExistingAnswersAsync(int exerciseId, int userId);
 }

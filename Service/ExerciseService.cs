@@ -95,12 +95,19 @@ public class ExerciseService : IExerciseService
                 return CustomResponse<bool>.Fail("Exercício não encontrado");
             }
 
-            if (!exercise!.IsDailyTask)
+            var effectivePhaseId = submission.PhaseId.GetValueOrDefault();
+            if (effectivePhaseId == 0)
             {
-                if (submission.SubmissionData!.SelectedOption != -1 && !submission.SubmissionData.IsCorrect)
-                {
-                    await InsertLowerExercisesAsync(submission.UserId, submission.PhaseId ?? 0, exercise.Id);
-                }
+                effectivePhaseId = exercise.PhaseId;
+            }
+
+            if (!exercise.IsDailyTask && !submission.SubmissionData!.IsCorrect)
+            {
+                await InsertLowerExercisesAsync(
+                    submission.UserId,
+                    effectivePhaseId,
+                    exercise.Id,
+                    submission.UserExerciseFlowId);
             }
 
             return result ? CustomResponse<bool>.SuccessTrade(true) : CustomResponse<bool>.Fail("Falha ao processar as respostas do exercício");
@@ -112,11 +119,11 @@ public class ExerciseService : IExerciseService
         }
     }
 
-    public async Task InsertLowerExercisesAsync(int userId, int phaseId, int exerciseId)
+    public async Task InsertLowerExercisesAsync(int userId, int phaseId, int exerciseId, int? userExerciseFlowId)
     {
         try
         {
-            await _exerciseRepository.InsertLowerExercisesAsync(userId, phaseId, exerciseId);
+            await _exerciseRepository.InsertLowerExercisesAsync(userId, phaseId, exerciseId, userExerciseFlowId);
         }
         catch (Exception ex)
         {
@@ -135,6 +142,20 @@ public class ExerciseService : IExerciseService
         {
             _logger.LogError(ex, "Erro ao sincronizar exercícios MAIN para a fase {PhaseId}", phaseId);
             return CustomResponse<int>.Fail("Ocorreu um erro ao sincronizar o fluxo MAIN da fase");
+        }
+    }
+
+    public async Task<CustomResponse<VerifyDTO>> VerifyExistingAnswersAsync(int exerciseId, int userId)
+    {
+        try
+        {
+            var result = await _exerciseRepository.VerifyExistingAnswersAsync(exerciseId, userId);
+            return CustomResponse<VerifyDTO>.SuccessTrade(new VerifyDTO { ExistingAnswers = result });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao verificar respostas existentes para o exercício {ExerciseId} e usuário {UserId}", exerciseId, userId);
+            return CustomResponse<VerifyDTO>.Fail("Ocorreu um erro ao verificar respostas existentes para o exercício especificado");
         }
     }
 }
