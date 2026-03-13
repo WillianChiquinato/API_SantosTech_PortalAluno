@@ -70,6 +70,12 @@ public class ClassService : IClassService
 
             var finalResult = new List<IslandDTO>();
 
+            //Sobre o bloqueio por dias.
+            var userCourse = await _classRepository.GetByIdAsync(module.CourseId);
+
+            var startDate = userCourse!.StartDate.Date;
+            var today = DateTime.UtcNow.Date;
+
             foreach (var phase in phases)
             {
                 var statusProgress = await _progressStudentPhaseRepository
@@ -290,19 +296,38 @@ public class ClassService : IClassService
                         .Min(e => flowOrderById.GetValueOrDefault(e.UserContainerExerciseFlowId ?? -1, int.MaxValue)))
                     .ToList();
 
-                var firstNotStartedExercise = blipsList
+                foreach (var blip in blipsList)
+                {
+                    var offset = blip.ContainerExercise.ContainerDateTarget;
+
+                    if (offset == null)
+                        continue;
+
+                    var unlockDate = startDate.AddDays(offset.Value);
+
+                    blip.UnlockDate = unlockDate;
+                    blip.IsLocked = today < unlockDate;
+
+                    if (blip.IsLocked)
+                    {
+                        blip.DaysRemaining = (unlockDate - today).Days;
+                    }
+                }
+
+                var firstAvailableExercise = blipsList
+                    .Where(b => !b.IsLocked)
                     .SelectMany(blip => blip.ContainerExercise.Exercises)
                     .Where(exercise => exercise.StateExercise == "Não iniciado")
                     .OrderBy(exercise => flowOrderById.GetValueOrDefault(exercise.UserContainerExerciseFlowId ?? -1, int.MaxValue))
                     .FirstOrDefault();
 
-                if (firstNotStartedExercise != null)
+                if (firstAvailableExercise != null)
                 {
-                    firstNotStartedExercise.StateExercise = "Atual";
+                    firstAvailableExercise.StateExercise = "Atual";
 
                     var currentBlip = blipsList.FirstOrDefault(blip =>
                         blip.ContainerExercise.Exercises.Any(exercise =>
-                            exercise.UserContainerExerciseFlowId == firstNotStartedExercise.UserContainerExerciseFlowId));
+                            exercise.UserContainerExerciseFlowId == firstAvailableExercise.UserContainerExerciseFlowId));
 
                     if (currentBlip != null && currentBlip.StateContainer != "Concluído")
                         currentBlip.StateContainer = "Atual";

@@ -17,6 +17,10 @@ public class BlipsDTO
     public ContainerExerciseDTO ContainerExercise { get; set; } = new();
     public string? StateContainer { get; set; }
     public int? PhaseId { get; set; }
+
+    public bool IsLocked { get; set; }
+    public DateTime? UnlockDate { get; set; }
+    public int? DaysRemaining { get; set; }
 }
 
 public class ContainerExerciseDTO
