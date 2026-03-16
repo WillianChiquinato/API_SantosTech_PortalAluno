@@ -8,6 +8,7 @@ public interface IExerciseRepository
     Task<List<Exercise>> GetAllAsync();
     Task<Exercise?> GetByIdAsync(int id);
     Task<List<Exercise>> GetByIdsAsync(List<int> ids);
+    Task<Exercise> CreateAsync(CreateExerciseDTO createExercise);
     Task<List<ExerciseDailyTasksDTO>> GetDailyTasksForPhaseAsync(int phaseId, int userId);
     Task<List<QuestionOptionsDTO>> GetQuestionsOptionsForExerciseAsync(int exerciseId);
     Task<bool> SubmitExerciseAnswersAsync(ExerciseSubmissionDTO submission);
@@ -24,4 +25,6 @@ public interface IExerciseRepository
     Task<int> SyncMainExercisesIntoExistingFlowsAsync(int phaseId);
     Task<bool> VerifyExistingAnswersAsync(int exerciseId, int userId);
     Task<List<ContainerTask>> GetContainerTasksByPhaseIdAsync(int phaseId);
+    Task<int> CreateQuestionBasedOnExerciseAsync(int exerciseId);
+    Task CreateMultipleChoiceOptionAsync(CreateMultipleChoiceOptionDTO option);
 }

@@ -10,11 +10,13 @@ public class ExerciseService : IExerciseService
 {
     private readonly ILogger<ExerciseService> _logger;
     private readonly IExerciseRepository _exerciseRepository;
+    private readonly AIService _aiService;
 
-    public ExerciseService(ILogger<ExerciseService> logger, IExerciseRepository exerciseRepository)
+    public ExerciseService(ILogger<ExerciseService> logger, IExerciseRepository exerciseRepository, AIService aiService)
     {
         _logger = logger;
         _exerciseRepository = exerciseRepository;
+        _aiService = aiService;
     }
 
     public async Task<CustomResponse<IEnumerable<Exercise>>> GetAllAsync()

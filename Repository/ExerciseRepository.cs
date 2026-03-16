@@ -150,7 +150,7 @@ public class ExerciseRepository : IExerciseRepository
     public Task<List<ExerciseDTO>> GetExercisesByPhaseId(int phaseId)
     {
         return _efDbContext.Exercises
-            .Where(e => e.PhaseId == phaseId && !e.IsDailyTask)
+            .Where(e => e.PhaseId == phaseId && e.Difficulty == DifficultyLevel.Normal)
             .AsNoTracking()
             .Select(e => new ExerciseDTO
             {
@@ -471,7 +471,10 @@ public class ExerciseRepository : IExerciseRepository
         var orderedMainExerciseIds = await GetOrderedMainExerciseIdsByContainerAsync(phaseId);
 
         if (!orderedMainExerciseIds.Any())
+        {
+            await EnsureTypeThreeExercisesAtEndAsync(userId, phaseId);
             return 0;
+        }
 
         var existingMainIds = await _efDbContext.UserExerciseFlows
             .Where(f => f.UserId == userId && f.PhaseId == phaseId && f.Origin == FlowOrigin.Main)
@@ -485,7 +488,10 @@ public class ExerciseRepository : IExerciseRepository
             .ToList();
 
         if (!missingMainIds.Any())
+        {
+            await EnsureTypeThreeExercisesAtEndAsync(userId, phaseId);
             return 0;
+        }
 
         var maxOrder = await _efDbContext.UserExerciseFlows
             .Where(f => f.UserId == userId && f.PhaseId == phaseId)
@@ -543,7 +549,10 @@ public class ExerciseRepository : IExerciseRepository
     private async Task<List<int>> GetOrderedMainExerciseIdsByContainerAsync(int phaseId)
     {
         var phaseMainExercises = await _efDbContext.Exercises
-            .Where(e => e.PhaseId == phaseId && !e.IsDailyTask && e.Difficulty != DifficultyLevel.Lower)
+            .Where(e => e.PhaseId == phaseId &&
+                        !e.IsDailyTask &&
+                        (e.Difficulty == DifficultyLevel.Normal ||
+                         e.Difficulty == DifficultyLevel.ProofTest))
             .AsNoTracking()
             .ToListAsync();
 
@@ -557,7 +566,7 @@ public class ExerciseRepository : IExerciseRepository
             .ToListAsync();
 
         var containerOrderedIds = containerRows
-            .Where(ct => ct.Exercise != null && ct.Exercise.Difficulty != DifficultyLevel.Lower)
+            .Where(ct => ct.Exercise != null && ct.Exercise.Difficulty == DifficultyLevel.Normal)
             .GroupBy(ct => ct.Name ?? string.Empty)
             .OrderBy(g => g.Min(x => x.ContainerDateTargetInt))
             .ThenBy(g => g.Min(x => x.Id))
@@ -597,5 +606,56 @@ public class ExerciseRepository : IExerciseRepository
             .Include(ct => ct.Exercise)
             .AsNoTracking()
             .ToListAsync();
+    }
+
+    public async Task<Exercise> CreateAsync(CreateExerciseDTO createExercise)
+    {
+        var exercise = new Exercise
+        {
+            PhaseId = createExercise.PhaseId,
+            Title = createExercise.Title,
+            Description = createExercise.Description,
+            VideoUrl = createExercise.VideoUrl,
+            PointsRedeem = createExercise.PointsRedeem,
+            TermAt = createExercise.TermAt,
+            TypeExercise = createExercise.TypeExercise,
+            Difficulty = createExercise.Difficulty,
+            IndexOrder = createExercise.IndexOrder,
+            IsDailyTask = createExercise.IsDailyTask,
+            IsFinalExercise = createExercise.IsFinalExercise,
+            ExercisePeriod = createExercise.ExercisePeriod,
+            CreatedAt = createExercise.CreatedAt,
+            UpdatedAt = createExercise.UpdatedAt
+        };
+
+        _efDbContext.Exercises.Add(exercise);
+        await _efDbContext.SaveChangesAsync();
+        return exercise;
+    }
+
+    public async Task CreateMultipleChoiceOptionAsync(CreateMultipleChoiceOptionDTO option)
+    {
+        var questionOptions = new QuestionOption
+        {
+            QuestionId = option.QuestionId ?? 0,
+            OptionText = option.OptionText,
+            IsCorrect = option.IsCorrect,
+        };
+
+        _efDbContext.QuestionOptions.Add(questionOptions);
+        await _efDbContext.SaveChangesAsync();
+    }
+
+    public async Task<int> CreateQuestionBasedOnExerciseAsync(int exerciseId)
+    {
+        var question = new Question
+        {
+            Statement = "Em aberto",
+            ExerciseId = exerciseId
+        };
+
+        _efDbContext.Questions.Add(question);
+        await _efDbContext.SaveChangesAsync();
+        return question.Id;
     }
 }

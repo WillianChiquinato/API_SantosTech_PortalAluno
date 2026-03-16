@@ -7,7 +7,8 @@ public enum DifficultyLevel
 {
     Normal = 1,
     Lower = 2,
-    ProofTest = 3
+    ProofTest = 3,
+    RepeatGenerate = 4
 }
 
 public enum ExerciseType

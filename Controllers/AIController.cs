@@ -24,4 +24,13 @@ public class AIController : ControllerBase
         
         return message != null ? Ok(new { message }) : StatusCode(500, "Falha ao gerar a mensagem motivacional."); 
     }
+
+    [HttpGet]
+    [Route("GenerateExerciseRepeat")]
+    public async Task<IActionResult> GenerateExerciseRepeat([FromQuery] int exerciseId, [FromQuery] int userId, [FromQuery] int? phaseId)
+    {
+        var response = await _aiService.GenerateExerciseRepeatAsync(exerciseId, userId, phaseId);
+        
+        return response != null ? Ok(response) : BadRequest(response);
+    }
 }

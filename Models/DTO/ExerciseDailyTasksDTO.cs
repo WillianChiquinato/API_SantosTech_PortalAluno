@@ -29,5 +29,24 @@ public class GenerateExerciseDTO
 {
     public int PhaseId { get; set; }
     public int UserId { get; set; }
-    public Exercise? Exercise { get; set; }
+    public CreateExerciseDTO? CreateExercise { get; set; }
+}
+
+public class CreateExerciseDTO
+{
+    public int? Id { get; set; }
+    public int PhaseId { get; set; }
+    public string? Title { get; set; }
+    public string? Description { get; set; }
+    public string? VideoUrl { get; set; }
+    public int PointsRedeem { get; set; }
+    public DateTime TermAt { get; set; }
+    public ExerciseType TypeExercise { get; set; }
+    public DifficultyLevel Difficulty { get; set; }
+    public int IndexOrder { get; set; }
+    public bool IsDailyTask { get; set; }
+    public bool IsFinalExercise { get; set; }
+    public DateTime ExercisePeriod { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
