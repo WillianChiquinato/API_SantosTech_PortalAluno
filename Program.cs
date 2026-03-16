@@ -41,6 +41,7 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<IEmailService, SendGridEmailService>();
 builder.Services.AddScoped<ReportService>();
+builder.Services.AddHttpClient<AIService>();
 
 // Hangfire
 builder.Services.AddHangfire(config =>

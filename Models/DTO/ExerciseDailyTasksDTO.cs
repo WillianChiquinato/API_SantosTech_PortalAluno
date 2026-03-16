@@ -24,3 +24,10 @@ public class ExerciseDTO
     public bool IsCompletedAnswer { get; set; }
     public DateTime ExercisePeriod { get; set; }
 }
+
+public class GenerateExerciseDTO
+{
+    public int PhaseId { get; set; }
+    public int UserId { get; set; }
+    public Exercise? Exercise { get; set; }
+}

@@ -225,7 +225,7 @@ public class ClassService : IClassService
                         };
                     })
                     .Where(item => item != null)
-                    .OrderBy(item => item!.FirstOrder)
+                    .OrderBy(item => item!.Blip.ContainerExercise.ContainerDateTarget ?? int.MaxValue)
                     .Select(item => item!.Blip)
                     .ToList();
 
@@ -292,8 +292,7 @@ public class ClassService : IClassService
 
                 blipsList.AddRange(fallbackBlips);
                 blipsList = blipsList
-                    .OrderBy(blip => blip.ContainerExercise.Exercises
-                        .Min(e => flowOrderById.GetValueOrDefault(e.UserContainerExerciseFlowId ?? -1, int.MaxValue)))
+                    .OrderBy(blip => blip.ContainerExercise.ContainerDateTarget ?? int.MaxValue)
                     .ToList();
 
                 foreach (var blip in blipsList)
