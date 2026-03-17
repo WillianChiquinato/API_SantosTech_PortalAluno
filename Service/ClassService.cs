@@ -319,6 +319,7 @@ public class ClassService : IClassService
                     })
                     .Where(e => e != null)
                     .Cast<ExercisesContentDTO>()
+                    .OrderBy(e => e.Exercise.IndexOrder)
                     .ToList();
 
                 return new BlipsDTO
