@@ -39,6 +39,9 @@ public class User
     [Column("bio")]
     public string? Bio { get; set; }
 
+    [Column("last_seen_at", TypeName = "timestamp")]
+    public DateTime? LastSeenAt { get; set; }
+
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }
 
