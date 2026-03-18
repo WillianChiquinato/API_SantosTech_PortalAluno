@@ -39,7 +39,7 @@ public class User
     [Column("bio")]
     public string? Bio { get; set; }
 
-    [Column("last_seen_at", TypeName = "timestamp")]
+    [Column("last_seen_at", TypeName = "timestamp with time zone")]
     public DateTime? LastSeenAt { get; set; }
 
     [Column("created_at")]

@@ -14,7 +14,7 @@ namespace API_PortalSantosTech.Data.Migrations
             migrationBuilder.AddColumn<DateTime>(
                 name: "last_seen_at",
                 table: "user",
-                type: "timestamp",
+                type: "timestamp with time zone",
                 nullable: true);
         }
 

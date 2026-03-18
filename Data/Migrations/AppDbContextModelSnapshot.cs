@@ -1068,7 +1068,7 @@ namespace API_PortalSantosTech.Data.Migrations
                         .HasColumnName("email");
 
                     b.Property<DateTime?>("LastSeenAt")
-                        .HasColumnType("timestamp")
+                        .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_seen_at");
 
                     b.Property<string>("Name")
