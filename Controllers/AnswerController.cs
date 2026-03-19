@@ -30,4 +30,13 @@ public class AnswerController : ControllerBase
         var response = await _answerService.GetByIdAsync(id);
         return response.Success ? Ok(response) : NotFound(response);
     }
+
+    [HttpGet]
+    [Route("GetAnswersByUserId")]
+    public async Task<IActionResult> GetByUserId([FromQuery] int userId)
+    {
+        var response = await _answerService.GetByUserIdAsync(userId);
+        
+        return response.Success ? Ok(response) : NotFound(response);
+    }
 }

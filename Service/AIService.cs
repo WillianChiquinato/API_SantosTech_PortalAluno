@@ -81,7 +81,7 @@ public class AIService
 Você é um gerador de exercícios para uma plataforma gamificada de programação
 com público alvo crianças, jovens e adolescentes.
 
-Crie um exercício semelhante ao abaixo.
+Crie um exercício semelhante ao abaixo, quero um exercicio no mesmo nivel de dificuldade, com o mesmo tema, mas com perguntas e respostas diferentes. O exercício deve ser baseado no exercício abaixo, mas não pode ser igual.
 
 Título: {baseExercise.Title}
 Descrição: {baseExercise.Description}
@@ -109,7 +109,6 @@ Se for dissertivo:
 {{
  ""title"": ""string"",
  ""description"": ""string"",
- ""video_url"": ""string"",
  ""type_exercise"": 2
 }}
 ";

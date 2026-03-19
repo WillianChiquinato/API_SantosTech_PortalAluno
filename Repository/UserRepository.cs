@@ -79,7 +79,7 @@ public class UserRepository : IUserRepository
             DarkModeEnabled = false,
             ReportFrequency = false,
             AcessibilityMode = false,
-            PreferredLanguage = "PT"
+            PreferredLanguage = "pt-BR"
         };
 
         _efDbContext.Configs.Add(newConfig);
