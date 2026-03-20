@@ -1,6 +1,10 @@
+using API_PortalSantosTech.Data;
+using API_PortalSantosTech.Models;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,15 +17,18 @@ public class PresenceController : ControllerBase
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
     private readonly ILogger<PresenceController> _logger;
+    private readonly AppDbContext _dbContext;
 
     public PresenceController(
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration,
-        ILogger<PresenceController> logger)
+        ILogger<PresenceController> logger,
+        AppDbContext dbContext)
     {
         _httpClientFactory = httpClientFactory;
         _configuration = configuration;
         _logger = logger;
+        _dbContext = dbContext;
     }
 
     [HttpPost("socket-ticket")]
@@ -60,29 +67,53 @@ public class PresenceController : ControllerBase
     {
         try
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value;
             if (string.IsNullOrEmpty(userIdClaim))
             {
                 return Unauthorized("User ID not found in token");
             }
 
-            var authHeader = Request.Headers.Authorization.ToString();
-            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value
+                ?? User.FindFirst(ClaimTypes.Upn)?.Value
+                ?? User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(userEmail))
             {
-                return Unauthorized("Bearer token not found");
+                return Unauthorized("User email not found in token");
             }
 
-            var token = authHeader["Bearer ".Length..];
             var portalPainelBaseUrl = _configuration["PortalPainel:BaseUrl"]
                 ?? throw new InvalidOperationException("PortalPainel:BaseUrl nao configurada");
+            var presenceProxySecret = _configuration["PortalPainel:PresenceProxySecret"];
 
             var upstreamUrl = $"{portalPainelBaseUrl.TrimEnd('/')}{upstreamPath}";
+            var roleId = await ResolvePresenceRoleIdAsync(userIdClaim, userEmail);
 
             var request = new HttpRequestMessage(HttpMethod.Post, upstreamUrl)
             {
-                Content = new StringContent("{}", Encoding.UTF8, "application/json"),
+                Content = JsonContent.Create(new PresenceProxyRequest
+                {
+                    UserId = userIdClaim,
+                    Usuario = userEmail,
+                    RoleId = roleId
+                }),
             };
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            if (!string.IsNullOrWhiteSpace(presenceProxySecret))
+            {
+                request.Headers.Add("X-Presence-Proxy-Secret", presenceProxySecret);
+            }
+            else
+            {
+                var authHeader = Request.Headers.Authorization.ToString();
+                if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
+                {
+                    return Unauthorized("Bearer token not found");
+                }
+
+                var token = authHeader["Bearer ".Length..];
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
 
             var httpClient = _httpClientFactory.CreateClient();
             var response = await httpClient.SendAsync(request);
@@ -106,6 +137,36 @@ public class PresenceController : ControllerBase
             return StatusCode(StatusCodes.Status502BadGateway, new { message = unexpectedFailureMessage });
         }
     }
+
+    private async Task<int> ResolvePresenceRoleIdAsync(string userIdClaim, string userEmail)
+    {
+        if (int.TryParse(userIdClaim, out var userId))
+        {
+            var roleById = await _dbContext.Users
+                .AsNoTracking()
+                .Where(user => user.Id == userId)
+                .Select(user => (int?)user.Role)
+                .FirstOrDefaultAsync();
+
+            if (roleById is >= 1 and <= 3)
+            {
+                return roleById.Value;
+            }
+        }
+
+        var roleByEmail = await _dbContext.Users
+            .AsNoTracking()
+            .Where(user => user.Email == userEmail)
+            .Select(user => (int?)user.Role)
+            .FirstOrDefaultAsync();
+
+        if (roleByEmail is >= 1 and <= 3)
+        {
+            return roleByEmail.Value;
+        }
+
+        return (int)UserRole.Student;
+    }
 }
 
 public class PresenceSocketTicketResponse
@@ -119,4 +180,11 @@ public class PresenceHeartbeatResponse
 {
     public bool Ok { get; set; }
     public string LastSeenAt { get; set; } = string.Empty;
+}
+
+public class PresenceProxyRequest
+{
+    public string UserId { get; set; } = string.Empty;
+    public string Usuario { get; set; } = string.Empty;
+    public int RoleId { get; set; }
 }
