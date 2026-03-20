@@ -7,6 +7,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 
 namespace API_PortalSantosTech.Controllers;
 
@@ -82,9 +83,13 @@ public class PresenceController : ControllerBase
                 return Unauthorized("User email not found in token");
             }
 
-            var portalPainelBaseUrl = _configuration["PortalPainel:BaseUrl"]
+            var portalPainelBaseUrl =
+                _configuration["PortalPainel:BaseUrl"]
+                ?? Environment.GetEnvironmentVariable("PortalPainel__BaseUrl")
                 ?? throw new InvalidOperationException("PortalPainel:BaseUrl nao configurada");
-            var presenceProxySecret = _configuration["PortalPainel:PresenceProxySecret"];
+            var presenceProxySecret =
+                _configuration["PortalPainel:PresenceProxySecret"]
+                ?? Environment.GetEnvironmentVariable("PortalPainel__PresenceProxySecret");
 
             var upstreamUrl = $"{portalPainelBaseUrl.TrimEnd('/')}{upstreamPath}";
             var roleId = await ResolvePresenceRoleIdAsync(userIdClaim, userEmail);
@@ -102,6 +107,23 @@ public class PresenceController : ControllerBase
             if (!string.IsNullOrWhiteSpace(presenceProxySecret))
             {
                 request.Headers.Add("X-Presence-Proxy-Secret", presenceProxySecret);
+
+                var clientUserAgent = Request.Headers.UserAgent.ToString();
+                if (!string.IsNullOrWhiteSpace(clientUserAgent))
+                {
+                    request.Headers.TryAddWithoutValidation("X-Presence-Client-User-Agent", clientUserAgent);
+                }
+
+                var forwardedFor = GetHeaderValue("X-Forwarded-For");
+                var clientIp =
+                    !string.IsNullOrWhiteSpace(forwardedFor)
+                        ? forwardedFor
+                        : HttpContext.Connection.RemoteIpAddress?.ToString();
+
+                if (!string.IsNullOrWhiteSpace(clientIp))
+                {
+                    request.Headers.TryAddWithoutValidation("X-Presence-Client-Ip", clientIp);
+                }
             }
             else
             {
@@ -120,10 +142,13 @@ public class PresenceController : ControllerBase
 
             if (!response.IsSuccessStatusCode)
             {
+                var upstreamContent = await response.Content.ReadAsStringAsync();
                 _logger.LogWarning(
-                    "Portal-do-aluno returned {StatusCode} for {Operation}",
+                    "Portal-do-aluno returned {StatusCode} for {Operation}. PresenceProxySecret configured: {HasPresenceProxySecret}. Body: {ResponseBody}",
                     response.StatusCode,
-                    operationName);
+                    operationName,
+                    !string.IsNullOrWhiteSpace(presenceProxySecret),
+                    upstreamContent);
 
                 return StatusCode(StatusCodes.Status502BadGateway, new { message = upstreamFailureMessage });
             }
@@ -166,6 +191,16 @@ public class PresenceController : ControllerBase
         }
 
         return (int)UserRole.Student;
+    }
+
+    private string? GetHeaderValue(string headerName)
+    {
+        if (!Request.Headers.TryGetValue(headerName, out StringValues values))
+        {
+            return null;
+        }
+
+        return values.ToString();
     }
 }
 
