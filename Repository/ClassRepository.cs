@@ -20,6 +20,11 @@ public class ClassRepository : IClassRepository
         return await _efDbContext.Classes.AsNoTracking().ToListAsync();
     }
 
+    public Task<Class?> GetByCourseAndModuleIdAsync(int courseId, int moduleId)
+    {
+        return _efDbContext.Classes.AsNoTracking().FirstOrDefaultAsync(x => x.CourseId == courseId && x.CurrentModuleId == moduleId);
+    }
+
     public async Task<Class?> GetByIdAsync(int id)
     {
         return await _efDbContext.Classes.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);

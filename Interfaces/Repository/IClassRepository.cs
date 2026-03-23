@@ -10,4 +10,5 @@ public interface IClassRepository
     Task<Module?> GetModuleByPhaseIdAsync(int phaseId);
     Task<Module?> GetCurrentModuleByClassIdAsync(int classId);
     Task<IEnumerable<IslandPhaseDTO>> GetPhasesByCurrentModuleAsync(int moduleId);
+    Task<Class?> GetByCourseAndModuleIdAsync(int courseId, int moduleId);
 }

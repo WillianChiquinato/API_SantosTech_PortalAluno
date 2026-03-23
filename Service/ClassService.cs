@@ -10,13 +10,15 @@ public class ClassService : IClassService
 {
     private readonly ILogger<ClassService> _logger;
     private readonly IClassRepository _classRepository;
+    private readonly IModuleRepository _moduleRepository;
     private readonly IProgressStudentPhaseRepository _progressStudentPhaseRepository;
     private readonly IExerciseRepository _exerciseRepository;
 
-    public ClassService(ILogger<ClassService> logger, IClassRepository classRepository, IProgressStudentPhaseRepository progressStudentPhaseRepository, IExerciseRepository exerciseRepository)
+    public ClassService(ILogger<ClassService> logger, IClassRepository classRepository, IModuleRepository moduleRepository, IProgressStudentPhaseRepository progressStudentPhaseRepository, IExerciseRepository exerciseRepository)
     {
         _logger = logger;
         _classRepository = classRepository;
+        _moduleRepository = moduleRepository;
         _progressStudentPhaseRepository = progressStudentPhaseRepository;
         _exerciseRepository = exerciseRepository;
     }
@@ -52,20 +54,22 @@ public class ClassService : IClassService
         }
     }
 
-    public async Task<CustomResponse<IEnumerable<IslandDTO>>> GetIslandsByUserIdAndCurrentModuleAsync(int userId, int phaseId)
+    public async Task<CustomResponse<IEnumerable<IslandDTO>>> GetIslandsByUserIdAndCurrentModuleAsync(int userId, int moduleId)
     {
         try
         {
-            var module = await _classRepository.GetModuleByPhaseIdAsync(phaseId);
+            var module = await _moduleRepository.GetByIdAsync(moduleId);
             if (module == null)
                 return CustomResponse<IEnumerable<IslandDTO>>.Fail("Módulo não encontrado");
 
-            var phases = await _classRepository.GetPhasesByCurrentModuleAsync(module.Id);
+            var phases = await _classRepository.GetPhasesByCurrentModuleAsync(moduleId);
             if (phases == null || !phases.Any())
                 return CustomResponse<IEnumerable<IslandDTO>>.Fail("Nenhuma ilha encontrada");
 
             var userAnswers = await _exerciseRepository.GetExercisesAnswersForUserAsync(userId);
-            var userCourse = await _classRepository.GetByIdAsync(module.CourseId);
+            var userCourse = await _classRepository.GetByCourseAndModuleIdAsync(module.CourseId, moduleId);
+            if (userCourse == null)
+                return CustomResponse<IEnumerable<IslandDTO>>.Fail("Curso do módulo não encontrado");
 
             var startDate = userCourse!.StartDate.Date;
             var today = DateTime.UtcNow.Date;

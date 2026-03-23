@@ -32,9 +32,9 @@ public class ClassController : ControllerBase
 
     [HttpGet]
     [Route("GetIslandsByUserIdAndCurrentModule")]
-    public async Task<IActionResult> GetIslandsByUserIdAndCurrentModule([FromQuery] int userId, [FromQuery] int phaseId)
+    public async Task<IActionResult> GetIslandsByUserIdAndCurrentModule([FromQuery] int userId, [FromQuery] int moduleId)
     {
-        var response = await _classService.GetIslandsByUserIdAndCurrentModuleAsync(userId, phaseId);
+        var response = await _classService.GetIslandsByUserIdAndCurrentModuleAsync(userId, moduleId);
         
         return response.Success ? Ok(response) : NotFound(response);
     }
