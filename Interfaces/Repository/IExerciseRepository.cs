@@ -27,4 +27,5 @@ public interface IExerciseRepository
     Task<List<ContainerTask>> GetContainerTasksByPhaseIdAsync(int phaseId);
     Task<int> CreateQuestionBasedOnExerciseAsync(int exerciseId);
     Task CreateMultipleChoiceOptionAsync(CreateMultipleChoiceOptionDTO option);
+    Task<List<Exercise>> GetExercisesByClassRoomIdsAsync(List<int> classRoomIds);
 }

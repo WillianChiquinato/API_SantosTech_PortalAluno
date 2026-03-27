@@ -658,4 +658,18 @@ public class ExerciseRepository : IExerciseRepository
         await _efDbContext.SaveChangesAsync();
         return question.Id;
     }
+
+    public async Task<List<Exercise>> GetExercisesByClassRoomIdsAsync(List<int> classRoomIds)
+    {
+        var exerciseIds = await _efDbContext.ClassRoomExercises
+            .Where(cre => classRoomIds.Contains(cre.ClassRoomId))
+            .Select(cre => cre.ExerciseId)
+            .Distinct()
+            .ToListAsync();
+
+        return await _efDbContext.Exercises
+            .Where(e => exerciseIds.Contains(e.Id))
+            .AsNoTracking()
+            .ToListAsync();
+    }
 }
