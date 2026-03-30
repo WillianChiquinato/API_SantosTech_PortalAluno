@@ -107,6 +107,16 @@ public class ClassService : IClassService
 
                 ResolveCurrentExercise(containerBlips, flow);
 
+                //Atualiza progresso do player em relação a quantidade de respostas com o total de exercícios para calcular a porcentagem de progresso na ilha.
+                var totalExercises = flow.Count;
+                var progressAnswer = answersByFlow.Count();
+                var updateProgress = await _progressStudentPhaseRepository.UpdateProgressAsync(userId, phase.Id, progressAnswer, totalExercises);
+
+                if (!updateProgress)
+                {
+                    return CustomResponse<IEnumerable<IslandDTO>>.Fail("Erro ao atualizar progresso do aluno");
+                }
+
                 var progress = await _progressStudentPhaseRepository
                     .GetProgressByUserIdAndPhaseIdAsync(userId, phase.Id);
 
