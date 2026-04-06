@@ -10,13 +10,15 @@ public class ClassService : IClassService
 {
     private readonly ILogger<ClassService> _logger;
     private readonly IClassRepository _classRepository;
+    private readonly IModuleRepository _moduleRepository;
     private readonly IProgressStudentPhaseRepository _progressStudentPhaseRepository;
     private readonly IExerciseRepository _exerciseRepository;
 
-    public ClassService(ILogger<ClassService> logger, IClassRepository classRepository, IProgressStudentPhaseRepository progressStudentPhaseRepository, IExerciseRepository exerciseRepository)
+    public ClassService(ILogger<ClassService> logger, IClassRepository classRepository, IModuleRepository moduleRepository, IProgressStudentPhaseRepository progressStudentPhaseRepository, IExerciseRepository exerciseRepository)
     {
         _logger = logger;
         _classRepository = classRepository;
+        _moduleRepository = moduleRepository;
         _progressStudentPhaseRepository = progressStudentPhaseRepository;
         _exerciseRepository = exerciseRepository;
     }
@@ -52,20 +54,22 @@ public class ClassService : IClassService
         }
     }
 
-    public async Task<CustomResponse<IEnumerable<IslandDTO>>> GetIslandsByUserIdAndCurrentModuleAsync(int userId, int phaseId)
+    public async Task<CustomResponse<IEnumerable<IslandDTO>>> GetIslandsByUserIdAndCurrentModuleAsync(int userId, int moduleId)
     {
         try
         {
-            var module = await _classRepository.GetModuleByPhaseIdAsync(phaseId);
+            var module = await _moduleRepository.GetByIdAsync(moduleId);
             if (module == null)
                 return CustomResponse<IEnumerable<IslandDTO>>.Fail("Módulo não encontrado");
 
-            var phases = await _classRepository.GetPhasesByCurrentModuleAsync(module.Id);
+            var phases = await _classRepository.GetPhasesByCurrentModuleAsync(moduleId);
             if (phases == null || !phases.Any())
                 return CustomResponse<IEnumerable<IslandDTO>>.Fail("Nenhuma ilha encontrada");
 
             var userAnswers = await _exerciseRepository.GetExercisesAnswersForUserAsync(userId);
-            var userCourse = await _classRepository.GetByIdAsync(module.CourseId);
+            var userCourse = await _classRepository.GetByCourseAndModuleIdAsync(module.CourseId, moduleId);
+            if (userCourse == null)
+                return CustomResponse<IEnumerable<IslandDTO>>.Fail("Curso do módulo não encontrado");
 
             var startDate = userCourse!.StartDate.Date;
             var today = DateTime.UtcNow.Date;
@@ -102,6 +106,16 @@ public class ClassService : IClassService
                 ApplyUnlockRules(containerBlips, startDate, today);
 
                 ResolveCurrentExercise(containerBlips, flow);
+
+                //Atualiza progresso do player em relação a quantidade de respostas com o total de exercícios para calcular a porcentagem de progresso na ilha.
+                var totalExercises = flow.Count;
+                var progressAnswer = answersByFlow.Count();
+                var updateProgress = await _progressStudentPhaseRepository.UpdateProgressAsync(userId, phase.Id, progressAnswer, totalExercises);
+
+                if (!updateProgress)
+                {
+                    return CustomResponse<IEnumerable<IslandDTO>>.Fail("Erro ao atualizar progresso do aluno");
+                }
 
                 var progress = await _progressStudentPhaseRepository
                     .GetProgressByUserIdAndPhaseIdAsync(userId, phase.Id);
@@ -492,5 +506,46 @@ public class ClassService : IClassService
 
         if (!blip.IsLocked && blip.StateContainer != "Concluído")
             blip.StateContainer = "Atual";
+    }
+
+    public async Task<CustomResponse<IEnumerable<ClassRoomDTO>>> GetClassRoomsByClassIdAsync(int classId)
+    {
+        try
+        {
+            var classRooms = await _classRepository.GetClassRoomsByClassIdAsync(classId);
+            if (classRooms == null || !classRooms.Any())
+                return CustomResponse<IEnumerable<ClassRoomDTO>>.Fail("Nenhuma sala de aula encontrada para esta classe");
+
+            var className = await _classRepository.GetByIdAsync(classId);
+            var getExercisesByClassRoomTasks = await _exerciseRepository.GetExercisesByClassRoomIdsAsync(classRooms.Select(cr => cr.Id).ToList());
+
+            var classRoomDTOs = classRooms.Select(cr => new ClassRoomDTO
+            {
+                Id = cr.Id,
+                ClassName = className?.Name!,
+                Name = cr.Name,
+                TargetLimited = cr.TargetLimited ?? DateTime.Now.AddHours(1),
+                Exercises = getExercisesByClassRoomTasks
+                    .Select(e => new ExerciseDTO
+                    {
+                        Id = e.Id,
+                        Title = e.Title,
+                        Description = e.Description,
+                        VideoUrl = e.VideoUrl,
+                        Difficulty = e.Difficulty,
+                        IndexOrder = e.IndexOrder,
+                        PointsRedeem = e.PointsRedeem
+                    })
+                    .ToList(),
+                CreatedAt = cr.CreatedAt
+            }).ToList();
+
+            return CustomResponse<IEnumerable<ClassRoomDTO>>.SuccessTrade(classRoomDTOs);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar salas de aula para a classe com ID {ClassId}", classId);
+            return CustomResponse<IEnumerable<ClassRoomDTO>>.Fail("Ocorreu um erro ao buscar as salas de aula");
+        }
     }
 }

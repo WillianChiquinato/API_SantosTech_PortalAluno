@@ -8,5 +8,6 @@ public interface IClassService
 {
     Task<CustomResponse<IEnumerable<Class>>> GetAllAsync();
     Task<CustomResponse<Class>> GetByIdAsync(int id);
-    Task<CustomResponse<IEnumerable<IslandDTO>>> GetIslandsByUserIdAndCurrentModuleAsync(int userId, int phaseId);
+    Task<CustomResponse<IEnumerable<IslandDTO>>> GetIslandsByUserIdAndCurrentModuleAsync(int userId, int moduleId);
+    Task<CustomResponse<IEnumerable<ClassRoomDTO>>> GetClassRoomsByClassIdAsync(int classId);
 }

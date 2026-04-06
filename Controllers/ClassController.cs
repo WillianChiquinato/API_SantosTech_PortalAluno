@@ -44,4 +44,12 @@ public class ClassController : ControllerBase
         var response = await _classService.GetIslandsByUserIdAndCurrentModuleAsync(authenticatedUserId.Value, phaseId);
         return response.Success ? Ok(response) : NotFound(response);
     }
+
+    [HttpGet]
+    [Route("GetClassRoomsByClassId")]
+    public async Task<IActionResult> GetClassRoomsByClassId([FromQuery] int classId)
+    {
+        var response = await _classService.GetClassRoomsByClassIdAsync(classId);
+        return response.Success ? Ok(response) : NotFound(response);
+    }
 }

@@ -12,6 +12,8 @@ public class AppDbContext : DbContext
     public DbSet<Badge> Badges { get; set; }
     public DbSet<BadgeStudent> BadgeStudents { get; set; }
     public DbSet<Class> Classes { get; set; }
+    public DbSet<ClassRoom> ClassRooms { get; set; }
+    public DbSet<ClassRoomExercise> ClassRoomExercises { get; set; }
     public DbSet<Course> Courses { get; set; }
     public DbSet<Enrollment> Enrollments { get; set; }
     public DbSet<Exercise> Exercises { get; set; }
