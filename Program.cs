@@ -22,6 +22,8 @@ if (builder.Environment.IsProduction())
     builder.WebHost.UseUrls("http://0.0.0.0:8080");
 }
 
+var allowedCorsOrigins = ResolveAllowedCorsOrigins(builder.Configuration);
+
 var connectionString =
     $"Host={Environment.GetEnvironmentVariable("DB_SERVER")};" +
     $"Port={Environment.GetEnvironmentVariable("DB_PORT")};" +
@@ -36,9 +38,7 @@ builder.Services.AddCors(options =>
     // [SEC] restrict CORS to known frontend origin
     options.AddPolicy("AllowFrontend",
         policy => policy
-            .WithOrigins(
-                builder.Configuration["Cors:AllowedOrigin"] ?? "http://localhost:3000"
-            )
+            .WithOrigins(allowedCorsOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials());
@@ -218,6 +218,29 @@ HangfireJobs.Register();
 app.MapControllers();
 
 app.MapGet("/", () => Results.Ok("API Running"));
+
+static string[] ResolveAllowedCorsOrigins(ConfigurationManager configuration)
+{
+    var configuredOrigins = configuration
+        .GetSection("Cors:AllowedOrigins")
+        .Get<string[]>() ?? Array.Empty<string>();
+
+    var legacyOrigin = configuration["Cors:AllowedOrigin"];
+    if (!string.IsNullOrWhiteSpace(legacyOrigin))
+    {
+        configuredOrigins = configuredOrigins.Append(legacyOrigin).ToArray();
+    }
+
+    var normalizedOrigins = configuredOrigins
+        .Where(origin => !string.IsNullOrWhiteSpace(origin))
+        .Select(origin => origin.Trim().TrimEnd('/'))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+
+    return normalizedOrigins.Length > 0
+        ? normalizedOrigins
+        : ["http://localhost:3000"];
+}
 app.Run();
 
 static string ResolveRateLimitKey(HttpContext httpContext, bool isDevelopment)
