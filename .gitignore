@@ -5,7 +5,7 @@ bin/
 obj/
 out/
 publish/
-
+.codex-build/
 ############################
 # Visual Studio
 ############################

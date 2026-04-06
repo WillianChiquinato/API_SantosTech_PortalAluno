@@ -2,12 +2,15 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using API_PortalSantosTech.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
 
 namespace API_PortalSantosTech.Services;
 
 public class TokenService
 {
+    public const string AuthCookieName = "portal_auth_token";
+    public const string OAuthStateCookiePrefix = "portal_oauth_state_";
     private readonly IConfiguration _config;
 
     public TokenService(IConfiguration config)
@@ -20,8 +23,9 @@ public class TokenService
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Name, user.Name)
+            new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
+            new Claim(ClaimTypes.Name, user.Name ?? string.Empty),
+            new Claim(ClaimTypes.Role, user.Role.ToString())
         };
 
         var key = new SymmetricSecurityKey(
@@ -41,6 +45,67 @@ public class TokenService
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public void AppendAuthCookie(HttpResponse response, string token, bool isHttps)
+    {
+        var expiresAt = DateTimeOffset.UtcNow.AddMinutes(
+            Convert.ToDouble(_config["Jwt:ExpireMinutes"])
+        );
+
+        response.Cookies.Append(AuthCookieName, token, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = isHttps,
+            SameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax,
+            Expires = expiresAt,
+            Path = "/"
+        });
+    }
+
+    public void DeleteAuthCookie(HttpResponse response, bool isHttps)
+    {
+        response.Cookies.Delete(AuthCookieName, BuildCookieOptions(isHttps));
+    }
+
+    public void AppendOAuthStateCookie(HttpResponse response, string provider, string state, bool isHttps)
+    {
+        response.Cookies.Append($"{OAuthStateCookiePrefix}{provider}", state, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = isHttps,
+            SameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax,
+            Expires = DateTimeOffset.UtcNow.AddMinutes(10),
+            Path = "/"
+        });
+    }
+
+    public void DeleteOAuthStateCookie(HttpResponse response, string provider, bool isHttps)
+    {
+        response.Cookies.Delete($"{OAuthStateCookiePrefix}{provider}", BuildCookieOptions(isHttps));
+    }
+
+    private static CookieOptions BuildCookieOptions(bool isHttps)
+    {
+        return new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = isHttps,
+            SameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax,
+            Path = "/"
+        };
+    }
+
+    public void ClearAuthCookie(HttpResponse response, bool isHttps)
+    {
+        response.Cookies.Append(AuthCookieName, string.Empty, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = isHttps,
+            SameSite = isHttps ? SameSiteMode.None : SameSiteMode.Lax,
+            Expires = DateTimeOffset.UtcNow.AddDays(-1),
+            Path = "/"
+        });
     }
 
     public int? ValidateToken(string token)

@@ -1,6 +1,6 @@
 using API_PortalSantosTech.Data;
 using API_PortalSantosTech.DependencyInjection;
-using Amazon;
+using API_PortalSantosTech.Filters;
 using Amazon.S3;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
@@ -11,6 +11,8 @@ using System.Threading.RateLimiting;
 using API_PortalSantosTech.Interfaces;
 using Hangfire;
 using Hangfire.PostgreSql;
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.HttpOverrides;
 
 DotNetEnv.Env.Load();
 
@@ -31,13 +33,24 @@ var connectionString =
 
 builder.Services.AddCors(options =>
 {
+    // [SEC] restrict CORS to known frontend origin
     options.AddPolicy("AllowFrontend",
-        policy => policy.AllowAnyOrigin()
-                        .AllowAnyHeader()
-                        .AllowAnyMethod());
+        policy => policy
+            .WithOrigins(
+                builder.Configuration["Cors:AllowedOrigin"] ?? "http://localhost:3000"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials());
 });
 
 builder.Services.AddControllers();
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<IEmailService, SendGridEmailService>();
 builder.Services.AddScoped<ReportService>();
@@ -61,11 +74,25 @@ builder.Services.AddSwaggerGen(c =>
         return new[] { api.ActionDescriptor.RouteValues["controller"] };
     });
 
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Insira o token JWT no formato: Bearer {seu_token}"
+    });
+
     c.OrderActionsBy(apiDesc => apiDesc.GroupName);
+    c.DocumentFilter<HangfireDocumentFilter>();
+    c.OperationFilter<AuthorizeOperationFilter>();
 });
 
 builder.Services.AddRateLimiter(options =>
 {
+    var isDevelopment = builder.Environment.IsDevelopment();
+
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
     options.OnRejected = async (context, cancellationToken) =>
@@ -75,17 +102,29 @@ builder.Services.AddRateLimiter(options =>
         await context.HttpContext.Response.WriteAsJsonAsync(new
         {
             error = "rate_limit_exceeded",
-            message = "Muitas tentativas de login. Aguarde antes de tentar novamente."
+            message = "Muitas requisicoes em pouco tempo. Aguarde antes de tentar novamente."
         }, cancellationToken);
     };
 
-    options.AddPolicy("loginPolicy", httpContext =>
+    // [SEC] global default policy: disabled in development, enabled in shared environments
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            partitionKey: ResolveRateLimitKey(httpContext, isDevelopment),
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 5,
+                PermitLimit = isDevelopment ? 1000 : 100,
                 Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+
+    // [SEC] login policy: relaxed in development to avoid local lockouts
+    options.AddPolicy("loginPolicy", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: ResolveRateLimitKey(httpContext, isDevelopment),
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = isDevelopment ? 30 : 3,
+                Window = isDevelopment ? TimeSpan.FromMinutes(1) : TimeSpan.FromMinutes(15),
                 QueueLimit = 0
             }));
 });
@@ -128,14 +167,35 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])
             )
         };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                if (!string.IsNullOrWhiteSpace(context.Token))
+                    return Task.CompletedTask;
+
+                if (context.Request.Cookies.TryGetValue(TokenService.AuthCookieName, out var cookieToken))
+                {
+                    context.Token = cookieToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
     });
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
 app.UseCors("AllowFrontend");
 
-app.UseSwagger();
-app.UseSwaggerUI();
+// [SEC] Swagger only in development
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 using (var scope = app.Services.CreateScope())
 {
@@ -143,14 +203,37 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
-app.UseHangfireDashboard();
-HangfireJobs.Register();
-
 app.UseRateLimiter();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+
+// [SEC] Hangfire dashboard requires admin authentication
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[] { new HangfireAuthorizationFilter() }
+});
+HangfireJobs.Register();
+
 app.MapControllers();
 
 app.MapGet("/", () => Results.Ok("API Running"));
 app.Run();
+
+static string ResolveRateLimitKey(HttpContext httpContext, bool isDevelopment)
+{
+    var forwardedFor = httpContext.Request.Headers["X-Forwarded-For"].ToString();
+    var forwardedIp = string.IsNullOrWhiteSpace(forwardedFor)
+        ? null
+        : forwardedFor.Split(',')[0].Trim();
+
+    var remoteIp = forwardedIp
+        ?? httpContext.Connection.RemoteIpAddress?.ToString()
+        ?? "unknown";
+
+    if (!isDevelopment)
+        return remoteIp;
+
+    var path = httpContext.Request.Path.Value ?? "unknown-path";
+    return $"{remoteIp}:{path}";
+}

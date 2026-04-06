@@ -1,6 +1,8 @@
 using API_PortalSantosTech.Interfaces;
 using API_PortalSantosTech.Models.DTO;
 using API_PortalSantosTech.Services;
+using API_PortalSantosTech.Utils;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -8,6 +10,7 @@ namespace API_PortalSantosTech.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize] // [SEC] all authenticated endpoints require JWT token
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -20,6 +23,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPost]
+    [AllowAnonymous] // [SEC] login endpoint is public
     [EnableRateLimiting("loginPolicy")]
     [Route("Login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
@@ -27,48 +31,72 @@ public class UserController : ControllerBase
         var user = await _userService.GetUserByEmailAndPassword(request.Email, request.Password);
 
         if (user.Errors.Count > 0)
-        {
             return BadRequest(user.Errors);
-        }
 
         var token = _tokenService.GenerateToken(user.Result);
+        _tokenService.AppendAuthCookie(Response, token, Request.IsHttps);
 
         return Ok(new
         {
             token,
-            user = new
-            {
-                user.Result.Id,
-                user.Result.Name,
-                user.Result.Email,
-                user.Result.Role,
-                user.Result.ProfilePictureUrl
-            }
+            user = user.Result.ToSafeDto()
         });
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin")] // [SEC] only admins can view all users
     [Route("GetAllUsers")]
     public async Task<IActionResult> GetAll()
     {
         var response = await _userService.GetAllAsync();
-        return Ok(response);
+        if (!response.Success || response.Result == null)
+            return NotFound(response);
+
+        return Ok(new
+        {
+            response.Success,
+            response.Errors,
+            Result = response.Result.Select(user => user.ToSafeDto()),
+            response.TotalRows
+        });
     }
 
     [HttpGet]
     [Route("GetUserById")]
     public async Task<IActionResult> GetById([FromQuery] int id)
     {
+        var authenticatedUserId = User.GetAuthenticatedUserId();
+        if (authenticatedUserId is null)
+            return Unauthorized();
+
+        if (authenticatedUserId.Value != id && !User.IsInRole("Admin"))
+            return Forbid();
+
         var response = await _userService.GetByIdAsync(id);
-        return response.Success ? Ok(response) : NotFound(response);
+        if (!response.Success || response.Result == null)
+            return NotFound(response);
+
+        return Ok(new
+        {
+            response.Success,
+            response.Errors,
+            Result = response.Result.ToSafeDto()
+        });
     }
 
     [HttpGet]
     [Route("GetProfileData")]
     public async Task<IActionResult> GetProfileData([FromQuery] int userid)
     {
+        var authenticatedUserId = User.GetAuthenticatedUserId();
+        if (authenticatedUserId is null)
+            return Unauthorized();
+
+        // [SEC] IDOR fix: validate authenticated user matches requested ID or is admin
+        if (authenticatedUserId.Value != userid && !User.IsInRole("Admin"))
+            return Forbid();
+
         var response = await _userService.GetProfileDataAsync(userid);
-        
         return response.Success ? Ok(response) : NotFound(response);
     }
 
@@ -76,11 +104,17 @@ public class UserController : ControllerBase
     [Route("UpdateUser")]
     public async Task<IActionResult> UpdateUser([FromBody] UpdateUserRequest request)
     {
-        var response = await _userService.UpdateUserAsync(request);
+        var authenticatedUserId = User.GetAuthenticatedUserId();
+        if (authenticatedUserId is null)
+            return Unauthorized();
+
+        // [SEC] extract authenticated user ID from JWT; don't trust client input
+        var response = await _userService.UpdateUserAsync(request, authenticatedUserId.Value);
         return response.Success ? Ok(response) : BadRequest(response);
     }
 
     [HttpPost]
+    [AllowAnonymous] // [SEC] email verification is public
     [Route("SendEmailVerify")]
     public async Task<IActionResult> SendEmailVerify([FromBody] EmailRequest request)
     {
@@ -89,6 +123,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPost]
+    [AllowAnonymous] // [SEC] email confirmation is public
     [Route("ConfirmEmailVerify")]
     public async Task<IActionResult> ConfirmEmailVerify([FromBody] ConfirmEmailRequest request)
     {
@@ -97,6 +132,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPost]
+    [AllowAnonymous] // [SEC] password recovery is public
     [Route("SendPasswordRecoveryEmail")]
     public async Task<IActionResult> SendPasswordRecoveryEmail([FromBody] EmailRequest request)
     {

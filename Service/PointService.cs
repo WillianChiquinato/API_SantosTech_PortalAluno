@@ -52,12 +52,7 @@ public class PointService : IPointService
         try
         {
             var result = await _pointRepository.GetRankingAsync();
-            var rankingDtos = result.Select(p => new PointRankingDTO 
-            { 
-                UserId = p.UserId, 
-                TotalPoints = p.Points
-            }).ToList();
-            return CustomResponse<IEnumerable<PointRankingDTO>>.SuccessTrade(rankingDtos);
+            return CustomResponse<IEnumerable<PointRankingDTO>>.SuccessTrade(result);
         }
         catch (Exception ex)
         {
@@ -66,20 +61,31 @@ public class PointService : IPointService
         }
     }
 
-    public async Task<CustomResponse<string>> AddPointsForUserAsync(AddPointsDTO addPoints)
+    public async Task<CustomResponse<ExercisePointAwardResult>> AddPointsForUserAsync(AddPointsDTO addPoints)
     {
         try
         {
-            var resultPointsUser = await _pointRepository.AddPointsForUserAsync(addPoints.UserId, addPoints.PointsToAdd, addPoints.ExerciseDate);
+            var awardResult = await _pointRepository.AddPointsForUserAsync(addPoints.UserId, addPoints.ExerciseId);
 
-            return resultPointsUser
-                ? CustomResponse<string>.SuccessTrade("Pontos adicionados com sucesso")
-                : CustomResponse<string>.Fail("Erro ao adicionar pontos para o usuário");
+            if (!awardResult.Success)
+                return CustomResponse<ExercisePointAwardResult>.Fail("Nao foi possivel contabilizar os pontos do exercicio");
+
+            if (awardResult.AlreadyAwarded)
+            {
+                awardResult.Message = "Os pontos deste exercicio ja foram contabilizados.";
+                return CustomResponse<ExercisePointAwardResult>.SuccessTrade(awardResult);
+            }
+
+            awardResult.Message = awardResult.PointsAwarded > 0
+                ? $"Voce ganhou {awardResult.PointsAwarded} ponto(s) neste exercicio."
+                : "Exercicio enviado sem pontuacao nesta tentativa.";
+
+            return CustomResponse<ExercisePointAwardResult>.SuccessTrade(awardResult);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao adicionar pontos para o usuário");
-            return CustomResponse<string>.Fail("Erro ao adicionar pontos para o usuário");
+            _logger.LogError(ex, "Erro ao adicionar pontos para o usuario");
+            return CustomResponse<ExercisePointAwardResult>.Fail("Erro ao adicionar pontos para o usuario");
         }
     }
 }

@@ -23,8 +23,10 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetUserByEmail(string email)
     {
+        var normalizedEmail = email.Trim().ToLower();
+
         return await _efDbContext.Users.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Email == email);
+            .FirstOrDefaultAsync(x => x.Email != null && x.Email.ToLower() == normalizedEmail);
     }
 
     public async Task<List<User>> GetAllAsync()
@@ -35,6 +37,26 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByIdAsync(int id)
     {
         return await _efDbContext.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+    public async Task<UserIdentity?> GetUserIdentityAsync(string provider, string providerUserId)
+    {
+        return await _efDbContext.UserIdentities.AsNoTracking()
+            .FirstOrDefaultAsync(identity => identity.Provider == provider && identity.ProviderUserId == providerUserId);
+    }
+
+    public async Task<UserIdentity?> GetUserIdentityByUserIdAndProviderAsync(int userId, string provider)
+    {
+        return await _efDbContext.UserIdentities.AsNoTracking()
+            .FirstOrDefaultAsync(identity => identity.UserId == userId && identity.Provider == provider);
+    }
+
+    public async Task<UserIdentity> CreateUserIdentityAsync(UserIdentity identity)
+    {
+        _efDbContext.UserIdentities.Add(identity);
+        await _efDbContext.SaveChangesAsync();
+
+        return identity;
     }
 
     public async Task<float> GetUserPointsAsync(int userId)

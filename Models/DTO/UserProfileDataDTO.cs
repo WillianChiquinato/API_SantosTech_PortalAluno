@@ -7,7 +7,7 @@ public class UserProfileDataDTO
     public string? Email { get; set; }
     public string? Bio { get; set; }
     public string? Role { get; set; }
-    public string? PasswordHash { get; set; }
+    // [SEC] PasswordHash removed — must never be sent to client
     public string? ProfilePictureUrl { get; set; }
     public string? CoverPictureUrl { get; set; }
     public string? LevelUser { get; set; }

@@ -31,6 +31,7 @@ public class AppDbContext : DbContext
     public DbSet<QuestionOption> QuestionOptions { get; set; }
     public DbSet<TeamsChallenger> TeamsChallengers { get; set; }
     public DbSet<User> Users { get; set; }
+    public DbSet<UserIdentity> UserIdentities { get; set; }
     public DbSet<Video> Videos { get; set; }
 
     public DbSet<Logs> Logs { get; set; }

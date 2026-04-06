@@ -1,11 +1,14 @@
 using API_PortalSantosTech.Interfaces;
 using API_PortalSantosTech.Models.DTO;
+using API_PortalSantosTech.Utils;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API_PortalSantosTech.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize] // [SEC] exercise endpoints require an authenticated user context
 public class ExerciseController : ControllerBase
 {
     private readonly IExerciseService _exerciseService;
@@ -33,9 +36,13 @@ public class ExerciseController : ControllerBase
 
     [HttpGet]
     [Route("GetDailyTasksForPhase")]
-    public async Task<IActionResult> GetDailyTasksForPhase([FromQuery] int phaseId, [FromQuery] int userId)
+    public async Task<IActionResult> GetDailyTasksForPhase([FromQuery] int phaseId)
     {
-        var response = await _exerciseService.GetDailyTasksForPhaseAsync(phaseId, userId);
+        var authenticatedUserId = User.GetAuthenticatedUserId();
+        if (authenticatedUserId is null)
+            return Unauthorized();
+
+        var response = await _exerciseService.GetDailyTasksForPhaseAsync(phaseId, authenticatedUserId.Value);
         return response.Success ? Ok(response) : NotFound(response);
     }
 
@@ -51,27 +58,28 @@ public class ExerciseController : ControllerBase
     [Route("SubmitExerciseAnswers")]
     public async Task<IActionResult> SubmitExerciseAnswers([FromBody] List<ExerciseSubmissionDTO> submission)
     {
-        if (submission == null)
-        {
+        if (submission == null || submission.Count == 0)
             return BadRequest(new { Success = false, Message = "Submission data is required." });
-        }
+
+        var authenticatedUserId = User.GetAuthenticatedUserId();
+        if (authenticatedUserId is null)
+            return Unauthorized();
 
         foreach (var item in submission)
         {
+            // [SEC] bind submissions to the authenticated user and ignore client-supplied ids
+            item.UserId = authenticatedUserId.Value;
+
             var response = await _exerciseService.SubmitExerciseAnswersAsync(item);
-
             if (!response.Success)
-            {
                 return BadRequest(response);
-            }
-
-            return Ok(response);
         }
 
         return Ok(new { Success = true, Message = "Respostas enviadas com sucesso." });
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,Teacher")] // [SEC] phase flow synchronization is a privileged operation
     [Route("SyncMainFlowByPhase")]
     public async Task<IActionResult> SyncMainFlowByPhase([FromQuery] int phaseId)
     {
@@ -81,9 +89,13 @@ public class ExerciseController : ControllerBase
 
     [HttpGet]
     [Route("VerifyExistingAnswers")]
-    public async Task<IActionResult> VerifyExistingAnswers([FromQuery] int exerciseId, [FromQuery] int userId)
+    public async Task<IActionResult> VerifyExistingAnswers([FromQuery] int exerciseId)
     {
-        var response = await _exerciseService.VerifyExistingAnswersAsync(exerciseId, userId);
+        var authenticatedUserId = User.GetAuthenticatedUserId();
+        if (authenticatedUserId is null)
+            return Unauthorized();
+
+        var response = await _exerciseService.VerifyExistingAnswersAsync(exerciseId, authenticatedUserId.Value);
         return response.Success ? Ok(response) : NotFound(response);
     }
 }

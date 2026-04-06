@@ -89,6 +89,9 @@ public class ExerciseService : IExerciseService
     {
         try
         {
+            var isCorrect = await ResolveSubmissionCorrectnessAsync(submission);
+            submission.SubmissionData!.IsCorrect = isCorrect;
+
             var result = await _exerciseRepository.SubmitExerciseAnswersAsync(submission);
 
             var exercise = await _exerciseRepository.GetByIdAsync(submission.ExerciseId);
@@ -103,7 +106,7 @@ public class ExerciseService : IExerciseService
                 effectivePhaseId = exercise.PhaseId;
             }
 
-            if (!exercise.IsDailyTask && !submission.SubmissionData!.IsCorrect)
+            if (!exercise.IsDailyTask && !isCorrect)
             {
                 await InsertLowerExercisesAsync(
                     submission.UserId,
@@ -119,6 +122,19 @@ public class ExerciseService : IExerciseService
             _logger.LogError(ex, "Erro ao processar as respostas do exercício");
             return CustomResponse<bool>.Fail("Ocorreu um erro ao processar as respostas do exercício");
         }
+    }
+
+    private async Task<bool> ResolveSubmissionCorrectnessAsync(ExerciseSubmissionDTO submission)
+    {
+        if (submission.SubmissionData == null || submission.SubmissionData.SelectedOption <= 0)
+            return false;
+
+        var options = await _exerciseRepository.GetQuestionsOptionsForExerciseAsync(submission.ExerciseId);
+        var selectedOption = options.FirstOrDefault(option =>
+            option.Id == submission.SubmissionData.SelectedOption &&
+            option.QuestionId == submission.QuestionId);
+
+        return selectedOption?.CorrectAnswer ?? false;
     }
 
     public async Task InsertLowerExercisesAsync(int userId, int phaseId, int exerciseId, int? userExerciseFlowId)

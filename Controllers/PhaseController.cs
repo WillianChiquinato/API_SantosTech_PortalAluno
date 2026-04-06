@@ -1,10 +1,13 @@
 using API_PortalSantosTech.Interfaces;
+using API_PortalSantosTech.Utils;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API_PortalSantosTech.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize] // [SEC] phase progress endpoints require authentication
 public class PhaseController : ControllerBase
 {
     private readonly IPhaseService _phaseService;
@@ -32,9 +35,13 @@ public class PhaseController : ControllerBase
 
     [HttpGet]
     [Route("GetCurrentModuleUser")]
-    public async Task<IActionResult> GetCurrentModuleUser([FromQuery] int userId)
+    public async Task<IActionResult> GetCurrentModuleUser()
     {
-        var response = await _phaseService.GetCurrentModuleUserAsync(userId);
+        var authenticatedUserId = User.GetAuthenticatedUserId();
+        if (authenticatedUserId is null)
+            return Unauthorized();
+
+        var response = await _phaseService.GetCurrentModuleUserAsync(authenticatedUserId.Value);
         return response.Success ? Ok(response) : NotFound(response);
     }
 }

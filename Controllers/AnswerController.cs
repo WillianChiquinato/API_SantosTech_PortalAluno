@@ -1,11 +1,13 @@
-using API_PortalSantosTech.Data;
 using API_PortalSantosTech.Interfaces;
+using API_PortalSantosTech.Utils;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API_PortalSantosTech.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize] // [SEC] all endpoints require authenticated user
 public class AnswerController : ControllerBase
 {
     private readonly IAnswerService _answerService;
@@ -16,6 +18,7 @@ public class AnswerController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin,Teacher")] // [SEC] full answer listings are restricted to privileged roles
     [Route("GetAllAnswers")]
     public async Task<IActionResult> GetAll()
     {
@@ -24,6 +27,7 @@ public class AnswerController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "Admin,Teacher")] // [SEC] direct answer lookup is restricted to privileged roles
     [Route("GetAnswerById")]
     public async Task<IActionResult> GetById([FromQuery] int id)
     {
@@ -33,10 +37,13 @@ public class AnswerController : ControllerBase
 
     [HttpGet]
     [Route("GetAnswersByUserId")]
-    public async Task<IActionResult> GetByUserId([FromQuery] int userId)
+    public async Task<IActionResult> GetByUserId()
     {
-        var response = await _answerService.GetByUserIdAsync(userId);
-        
+        var authenticatedUserId = User.GetAuthenticatedUserId();
+        if (authenticatedUserId is null)
+            return Unauthorized();
+
+        var response = await _answerService.GetByUserIdAsync(authenticatedUserId.Value);
         return response.Success ? Ok(response) : NotFound(response);
     }
 }

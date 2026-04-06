@@ -47,7 +47,9 @@ public class UserService : IUserService
         }
         catch (Exception e)
         {
-            return CustomResponse<User>.Fail("Ocorreu um erro", e.Message);
+            // [SEC] log error internally, return generic message to client
+            _logger.LogError(e, "Unexpected error in GetUserByEmailAndPassword");
+            return CustomResponse<User>.Fail("Ocorreu um erro ao processar sua requisição.");
         }
     }
 
@@ -63,7 +65,8 @@ public class UserService : IUserService
         }
         catch (Exception e)
         {
-            return CustomResponse<IEnumerable<User>>.Fail("Ocorreu um erro", e.Message);
+            _logger.LogError(e, "Unexpected error in GetAllAsync");
+            return CustomResponse<IEnumerable<User>>.Fail("Ocorreu um erro ao processar sua requisicao.");
         }
     }
 
@@ -78,7 +81,9 @@ public class UserService : IUserService
         }
         catch (Exception e)
         {
-            return CustomResponse<User>.Fail("Ocorreu um erro", e.Message);
+            // [SEC] log error internally, return generic message to client
+            _logger.LogError(e, "Unexpected error in GetByIdAsync");
+            return CustomResponse<User>.Fail("Ocorreu um erro ao processar sua requisição.");
         }
     }
 
@@ -116,7 +121,7 @@ public class UserService : IUserService
                     Name = resultUser.Name,
                     Bio = resultUser.Bio,
                     Role = roleUser,
-                    PasswordHash = resultUser.PasswordHash,
+                    // [SEC] PasswordHash removed — never send to client
                     ProfilePictureUrl = resultUser.ProfilePictureUrl,
                     CoverPictureUrl = resultUser.CoverPhotoUrl,
                     LevelUser = userLevel!.Name,
@@ -137,21 +142,27 @@ public class UserService : IUserService
         }
         catch (Exception e)
         {
-            return CustomResponse<UserProfileDataDTO>.Fail("Ocorreu um erro", e.Message);
+            _logger.LogError(e, "Unexpected error in GetProfileDataAsync");
+            return CustomResponse<UserProfileDataDTO>.Fail("Ocorreu um erro ao processar sua requisicao.");
         }
     }
 
-    public async Task<CustomResponse<User>> UpdateUserAsync(UpdateUserRequest request)
+    public async Task<CustomResponse<User>> UpdateUserAsync(UpdateUserRequest request, int authenticatedUserId)
     {
         try
         {
+            // [SEC] verify user is updating their own profile (unless admin)
+            var currentUser = await _userRepository.GetByIdAsync(authenticatedUserId);
+            if (currentUser == null)
+                return CustomResponse<User>.Fail("Usuário não encontrado");
+
             var profilePictureUrl = await ResolveUserImageUrlAsync(request.ProfilePictureUrl, "users/profile");
             var coverPictureUrl = await ResolveUserImageUrlAsync(request.CoverPictureUrl, "users/cover");
             string? passwordHash = null;
 
             if (String.IsNullOrWhiteSpace(request.Password))
             {
-                var getPasswordHash = await _userRepository.GetByIdAsync(request.Id);
+                var getPasswordHash = await _userRepository.GetByIdAsync(authenticatedUserId);
                 passwordHash = getPasswordHash?.PasswordHash;
             }
             else
@@ -161,11 +172,13 @@ public class UserService : IUserService
 
             var userToUpdate = new User
             {
-                Id = request.Id,
+                // [SEC] Id from JWT token, not client input
+                Id = authenticatedUserId,
                 Name = request.Name,
                 Email = request.Email,
                 PasswordHash = passwordHash,
-                Role = (UserRole)(request.Role ?? 0),
+                // [SEC] Role never changes via this endpoint
+                Role = currentUser.Role,
                 Bio = request.Bio,
                 ProfilePictureUrl = profilePictureUrl,
                 CoverPhotoUrl = coverPictureUrl,
@@ -180,7 +193,9 @@ public class UserService : IUserService
         }
         catch (Exception e)
         {
-            return CustomResponse<User>.Fail("Ocorreu um erro", e.Message);
+            // [SEC] log full error, return generic message to client
+            _logger.LogError(e, "Unexpected error in UpdateUserAsync");
+            return CustomResponse<User>.Fail("Ocorreu um erro ao processar sua requisição.");
         }
     }
 
@@ -234,7 +249,8 @@ public class UserService : IUserService
         }
         catch (Exception e)
         {
-            return CustomResponse<ConfigsDTO>.Fail("Ocorreu um erro", e.Message);
+            _logger.LogError(e, "Unexpected error in GetConfigsAsync");
+            return CustomResponse<ConfigsDTO>.Fail("Ocorreu um erro ao processar sua requisicao.");
         }
     }
 
@@ -250,7 +266,8 @@ public class UserService : IUserService
         }
         catch (Exception e)
         {
-            return CustomResponse<ConfigsDTO>.Fail("Ocorreu um erro", e.Message);
+            _logger.LogError(e, "Unexpected error in CreateNewConfigAsync");
+            return CustomResponse<ConfigsDTO>.Fail("Ocorreu um erro ao processar sua requisicao.");
         }
     }
 
@@ -278,7 +295,8 @@ public class UserService : IUserService
         }
         catch (Exception e)
         {
-            return CustomResponse<UpdateConfigRequest>.Fail("Ocorreu um erro", e.Message);
+            _logger.LogError(e, "Unexpected error in UpdateConfigsAsync");
+            return CustomResponse<UpdateConfigRequest>.Fail("Ocorreu um erro ao processar sua requisicao.");
         }
     }
 
@@ -294,7 +312,8 @@ public class UserService : IUserService
         }
         catch (Exception e)
         {
-            return CustomResponse<bool>.Fail("Ocorreu um erro", e.Message);
+            _logger.LogError(e, "Unexpected error in SendEmailVerifyAsync");
+            return CustomResponse<bool>.Fail("Ocorreu um erro ao processar sua requisicao.");
         }
     }
 
@@ -310,7 +329,8 @@ public class UserService : IUserService
         }
         catch (Exception e)
         {
-            return CustomResponse<bool>.Fail("Ocorreu um erro", e.Message);
+            _logger.LogError(e, "Unexpected error in ConfirmEmailVerifyAsync");
+            return CustomResponse<bool>.Fail("Ocorreu um erro ao processar sua requisicao.");
         }
     }
 
@@ -331,7 +351,8 @@ public class UserService : IUserService
         }
         catch (Exception e)
         {
-            return CustomResponse<bool>.Fail("Ocorreu um erro", e.Message);
+            _logger.LogError(e, "Unexpected error in SendPasswordRecoveryEmailAsync");
+            return CustomResponse<bool>.Fail("Ocorreu um erro ao processar sua requisicao.");
         }
     }
 
@@ -359,7 +380,8 @@ public class UserService : IUserService
         }
         catch (Exception e)
         {
-            return CustomResponse<IEnumerable<UserWithAbilityDTO>>.Fail("Ocorreu um erro", e.Message);
+            _logger.LogError(e, "Unexpected error in GetUsersWithAbilityAsync");
+            return CustomResponse<IEnumerable<UserWithAbilityDTO>>.Fail("Ocorreu um erro ao processar sua requisicao.");
         }
     }
 }

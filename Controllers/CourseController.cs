@@ -1,10 +1,12 @@
 using API_PortalSantosTech.Interfaces;
+using API_PortalSantosTech.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API_PortalSantosTech.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+
 public class CourseController : ControllerBase
 {
     private readonly ICourseService _courseService;
@@ -48,9 +50,13 @@ public class CourseController : ControllerBase
 
     [HttpGet]
     [Route("GetProgressUserPaidCourses")]
-    public async Task<IActionResult> GetProgressUserPaidCourses([FromQuery] int userId)
+    public async Task<IActionResult> GetProgressUserPaidCourses()
     {
-        var response = await _courseService.GetProgressUserPaidCoursesAsync(userId);
+        var authenticatedUserId = User.GetAuthenticatedUserId();
+        if (authenticatedUserId is null)
+            return Unauthorized();
+
+        var response = await _courseService.GetProgressUserPaidCoursesAsync(authenticatedUserId.Value);
         return response.Success ? Ok(response) : NotFound(response);
     }
 }
