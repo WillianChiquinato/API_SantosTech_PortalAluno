@@ -217,7 +217,11 @@ HangfireJobs.Register();
 
 app.MapControllers();
 
-app.MapGet("/", () => Results.Ok("API Running"));
+static IResult ApiHealthResponse() => Results.Ok("API Running");
+
+app.MapGet("/", ApiHealthResponse);
+app.MapGet("/api", ApiHealthResponse);
+app.MapGet("/api/", ApiHealthResponse);
 
 static string[] ResolveAllowedCorsOrigins(ConfigurationManager configuration)
 {
