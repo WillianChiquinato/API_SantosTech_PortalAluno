@@ -151,7 +151,7 @@ public class AuthController : ControllerBase
             var token = _tokenService.GenerateToken(localUser);
             _tokenService.AppendAuthCookie(Response, token, Request.IsHttps);
 
-            return Redirect(BuildStudentViewSuccessRedirect());
+            return Redirect(BuildStudentViewSuccessRedirect(payload.ReturnTo));
         }
         catch
         {
@@ -262,15 +262,23 @@ public class AuthController : ControllerBase
         });
     }
 
-    private string BuildStudentViewSuccessRedirect()
+    private string BuildStudentViewSuccessRedirect(string? returnTo)
     {
         var successPath = _configuration["PortalPainel:SsoSuccessPath"]
             ?? Environment.GetEnvironmentVariable("PortalPainel__SsoSuccessPath")
             ?? "/dashboard";
 
-        return successPath.StartsWith("/")
+        var redirectPath = successPath.StartsWith("/")
             ? successPath
             : $"/{successPath}";
+
+        if (string.IsNullOrWhiteSpace(returnTo))
+            return redirectPath;
+
+        return QueryHelpers.AddQueryString(redirectPath, new Dictionary<string, string?>
+        {
+            ["returnTo"] = returnTo
+        });
     }
 
     private string BuildStudentViewErrorRedirect(string message)
@@ -300,6 +308,7 @@ public class AuthController : ControllerBase
     private sealed class StudentViewExchangeResponse
     {
         public StudentViewExchangeUser? User { get; set; }
+        public string? ReturnTo { get; set; }
     }
 
     private sealed class StudentViewExchangeUser
