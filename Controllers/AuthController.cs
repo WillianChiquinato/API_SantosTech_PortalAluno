@@ -1,10 +1,14 @@
 using API_PortalSantosTech.Interfaces;
+using API_PortalSantosTech.Interfaces.Repository;
 using API_PortalSantosTech.Utils;
 using API_PortalSantosTech.Models.DTO;
 using API_PortalSantosTech.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 
 namespace API_PortalSantosTech.Controllers;
 
@@ -14,16 +18,26 @@ namespace API_PortalSantosTech.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly IUserRepository _userRepository;
     private readonly IOAuthService _oauthService;
     private readonly TokenService _tokenService;
     private readonly IConfiguration _configuration;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public AuthController(IUserService userService, IOAuthService oauthService, TokenService tokenService, IConfiguration configuration)
+    public AuthController(
+        IUserService userService,
+        IUserRepository userRepository,
+        IOAuthService oauthService,
+        TokenService tokenService,
+        IConfiguration configuration,
+        IHttpClientFactory httpClientFactory)
     {
         _userService = userService;
+        _userRepository = userRepository;
         _oauthService = oauthService;
         _tokenService = tokenService;
         _configuration = configuration;
+        _httpClientFactory = httpClientFactory;
     }
 
     [HttpGet]
@@ -82,6 +96,66 @@ public class AuthController : ControllerBase
                 success = false,
                 errors = new[] { exception.Message }
             });
+        }
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    [Route("sso/callback")]
+    public async Task<IActionResult> StudentViewSsoCallback([FromQuery] string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return Redirect(BuildStudentViewErrorRedirect("Codigo SSO ausente."));
+
+        var portalPainelBaseUrl =
+            _configuration["PortalPainel:BaseUrl"]
+            ?? Environment.GetEnvironmentVariable("PortalPainel__BaseUrl");
+        var sharedSecret =
+            _configuration["PortalPainel:SsoSharedSecret"]
+            ?? Environment.GetEnvironmentVariable("PortalPainel__SsoSharedSecret");
+
+        if (string.IsNullOrWhiteSpace(portalPainelBaseUrl) || string.IsNullOrWhiteSpace(sharedSecret))
+            return Redirect(BuildStudentViewErrorRedirect("SSO do admin portal nao configurado."));
+
+        try
+        {
+            var client = _httpClientFactory.CreateClient();
+            using var request = new HttpRequestMessage(
+                HttpMethod.Post,
+                $"{portalPainelBaseUrl.TrimEnd('/')}/auth/student-view/exchange");
+
+            request.Headers.Add("x-sso-shared-secret", sharedSecret);
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            request.Content = new StringContent(
+                JsonSerializer.Serialize(new { code }),
+                Encoding.UTF8,
+                "application/json");
+
+            using var response = await client.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                return Redirect(BuildStudentViewErrorRedirect("Nao foi possivel validar o acesso SSO."));
+            }
+
+            var payload = JsonSerializer.Deserialize<StudentViewExchangeResponse>(
+                await response.Content.ReadAsStringAsync(),
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (payload?.User?.Email == null)
+                return Redirect(BuildStudentViewErrorRedirect("Usuario SSO nao identificado."));
+
+            var localUser = await ResolveLocalStudentViewUserAsync(payload.User.Id, payload.User.Email);
+            if (localUser == null)
+                return Redirect(BuildStudentViewErrorRedirect("Usuario nao encontrado no portal do aluno."));
+
+            var token = _tokenService.GenerateToken(localUser);
+            _tokenService.AppendAuthCookie(Response, token, Request.IsHttps);
+
+            return Redirect(BuildStudentViewSuccessRedirect());
+        }
+        catch
+        {
+            return Redirect(BuildStudentViewErrorRedirect("Erro ao concluir a visao do aluno."));
         }
     }
 
@@ -186,5 +260,52 @@ public class AuthController : ControllerBase
             ["error"] = errorCode,
             ["message"] = message
         });
+    }
+
+    private string BuildStudentViewSuccessRedirect()
+    {
+        var successPath = _configuration["PortalPainel:SsoSuccessPath"]
+            ?? Environment.GetEnvironmentVariable("PortalPainel__SsoSuccessPath")
+            ?? "/dashboard";
+
+        return successPath.StartsWith("/")
+            ? successPath
+            : $"/{successPath}";
+    }
+
+    private string BuildStudentViewErrorRedirect(string message)
+    {
+        var basePath = _configuration["PortalPainel:SsoErrorPath"]
+            ?? Environment.GetEnvironmentVariable("PortalPainel__SsoErrorPath")
+            ?? "/";
+
+        return QueryHelpers.AddQueryString(basePath, new Dictionary<string, string?>
+        {
+            ["message"] = message
+        });
+    }
+
+    private async Task<API_PortalSantosTech.Models.User?> ResolveLocalStudentViewUserAsync(string? sourceUserId, string email)
+    {
+        if (int.TryParse(sourceUserId, out var userId))
+        {
+            var byId = await _userRepository.GetByIdAsync(userId);
+            if (byId?.Email != null && string.Equals(byId.Email, email, StringComparison.OrdinalIgnoreCase))
+                return byId;
+        }
+
+        return await _userRepository.GetUserByEmail(email);
+    }
+
+    private sealed class StudentViewExchangeResponse
+    {
+        public StudentViewExchangeUser? User { get; set; }
+    }
+
+    private sealed class StudentViewExchangeUser
+    {
+        public string? Id { get; set; }
+        public string? Email { get; set; }
+        public string? Name { get; set; }
     }
 }
