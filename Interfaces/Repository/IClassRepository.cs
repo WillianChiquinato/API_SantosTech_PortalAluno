@@ -12,4 +12,5 @@ public interface IClassRepository
     Task<IEnumerable<IslandPhaseDTO>> GetPhasesByCurrentModuleAsync(int moduleId);
     Task<Class?> GetByCourseAndModuleIdAsync(int courseId, int moduleId);
     Task<IEnumerable<ClassRoom>> GetClassRoomsByClassIdAsync(int classId);
+    Task<IEnumerable<Class>> GetClassesByUserIdAsync(int userId);
 }

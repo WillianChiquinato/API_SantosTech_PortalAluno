@@ -1,4 +1,5 @@
 using API_PortalSantosTech.Interfaces;
+using API_PortalSantosTech.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API_PortalSantosTech.Controllers;
@@ -28,5 +29,40 @@ public class BadgeController : ControllerBase
     {
         var response = await _badgeService.GetByIdAsync(id);
         return response.Success ? Ok(response) : NotFound(response);
+    }
+
+    [HttpGet]
+    [Route("GetGoalsWithBadgesByCourseId")]
+    public async Task<IActionResult> GetGoalsWithBadgesByCourseId([FromQuery] int courseId)
+    {
+        var response = await _badgeService.GetGoalsWithBadgesByCourseIdAsync(courseId);
+
+        return response.Success ? Ok(response) : NotFound(response);
+    }
+
+    [HttpGet]
+    [Route("GetActivatedGoalsByUserId")]
+    public async Task<IActionResult> GetActivatedGoalsByUserId()
+    {
+        var authenticatedUserId = User.GetAuthenticatedUserId();
+        if (authenticatedUserId is null)
+            return Unauthorized();
+
+        var response = await _badgeService.GetActivatedGoalsByUserIdAsync(authenticatedUserId.Value);
+
+        return response.Success ? Ok(response) : NotFound(response);
+    }
+
+    [HttpPost]
+    [Route("UpdateActivatedGoalId")]
+    public async Task<IActionResult> UpdateActivatedGoalId([FromQuery] int goalId)
+    {
+        var authenticatedUserId = User.GetAuthenticatedUserId();
+        if (authenticatedUserId is null)
+            return Unauthorized();
+
+        var response = await _badgeService.UpdateActivatedGoalIdAsync(goalId, authenticatedUserId.Value);
+
+        return response.Success ? Ok(response) : BadRequest(response);
     }
 }

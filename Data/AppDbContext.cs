@@ -17,6 +17,9 @@ public class AppDbContext : DbContext
     public DbSet<Course> Courses { get; set; }
     public DbSet<Enrollment> Enrollments { get; set; }
     public DbSet<Exercise> Exercises { get; set; }
+    public DbSet<Goal> Goals { get; set; }
+    public DbSet<GoalReward> GoalRewards { get; set; }
+    public DbSet<GoalStudent> GoalStudents { get; set; }
     public DbSet<UserExerciseFlow> UserExerciseFlows { get; set; }
     public DbSet<ContainerTask> ContainerTasks { get; set; }
     public DbSet<FinalModuleSubmission> FinalModuleSubmissions { get; set; }

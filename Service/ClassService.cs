@@ -548,4 +548,18 @@ public class ClassService : IClassService
             return CustomResponse<IEnumerable<ClassRoomDTO>>.Fail("Ocorreu um erro ao buscar as salas de aula");
         }
     }
+
+    public async Task<CustomResponse<IEnumerable<Class>>> GetClassesByUserIdAsync(int userId)
+    {
+        try
+        {
+            var classes = await _classRepository.GetClassesByUserIdAsync(userId);
+            return CustomResponse<IEnumerable<Class>>.SuccessTrade(classes);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar classes para o usuário com ID {UserId}", userId);
+            return CustomResponse<IEnumerable<Class>>.Fail("Ocorreu um erro ao buscar as classes");
+        }
+    }
 }

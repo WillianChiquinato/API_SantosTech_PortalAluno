@@ -34,6 +34,19 @@ public class ClassController : ControllerBase
     }
 
     [HttpGet]
+    [Route("GetClassesByUserId")]
+    public async Task<IActionResult> GetClassesByUserId()
+    {
+        var authenticatedUserId = User.GetAuthenticatedUserId();
+        if (authenticatedUserId is null)
+            return Unauthorized();
+
+        var response = await _classService.GetClassesByUserIdAsync(authenticatedUserId.Value);
+        
+        return response.Success ? Ok(response) : NotFound(response);
+    }
+
+    [HttpGet]
     [Route("GetIslandsByUserIdAndCurrentModule")]
     public async Task<IActionResult> GetIslandsByUserIdAndCurrentModule([FromQuery] int phaseId)
     {
