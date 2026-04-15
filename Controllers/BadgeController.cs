@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace API_PortalSantosTech.Controllers;
 
 [ApiController]
+// [Authorize]
 [Route("api/[controller]")]
 public class BadgeController : ControllerBase
 {
@@ -55,13 +56,13 @@ public class BadgeController : ControllerBase
 
     [HttpPost]
     [Route("UpdateActivatedGoalId")]
-    public async Task<IActionResult> UpdateActivatedGoalId([FromQuery] int goalId)
+    public async Task<IActionResult> UpdateActivatedGoalId([FromQuery] int goalRewardId)
     {
         var authenticatedUserId = User.GetAuthenticatedUserId();
         if (authenticatedUserId is null)
             return Unauthorized();
 
-        var response = await _badgeService.UpdateActivatedGoalIdAsync(goalId, authenticatedUserId.Value);
+        var response = await _badgeService.UpdateActivatedGoalIdAsync(goalRewardId, authenticatedUserId.Value);
 
         return response.Success ? Ok(response) : BadRequest(response);
     }

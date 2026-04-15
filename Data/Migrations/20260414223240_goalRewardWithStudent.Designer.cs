@@ -3,6 +3,7 @@ using System;
 using API_PortalSantosTech.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace API_PortalSantosTech.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260414223240_goalRewardWithStudent")]
+    partial class goalRewardWithStudent
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -676,7 +679,7 @@ namespace API_PortalSantosTech.Data.Migrations
 
                     b.Property<int>("GoalRewardId")
                         .HasColumnType("integer")
-                        .HasColumnName("goal_reward_id");
+                        .HasColumnName("goal_id");
 
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("boolean")
@@ -867,241 +870,6 @@ namespace API_PortalSantosTech.Data.Migrations
                     b.HasIndex("CourseId");
 
                     b.ToTable("module");
-                });
-
-            modelBuilder.Entity("API_PortalSantosTech.Models.Notification", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("message");
-
-                    b.Property<string>("MetadataJson")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("metadata_json");
-
-                    b.Property<int>("NotificationDispatchId")
-                        .HasColumnType("integer")
-                        .HasColumnName("notification_dispatch_id");
-
-                    b.Property<int>("NotificationTemplateId")
-                        .HasColumnType("integer")
-                        .HasColumnName("notification_template_id");
-
-                    b.Property<DateTime?>("ReadAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("read_at");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("title");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NotificationDispatchId");
-
-                    b.HasIndex("NotificationTemplateId");
-
-                    b.HasIndex("UserId", "ReadAt");
-
-                    b.ToTable("notification");
-                });
-
-            modelBuilder.Entity("API_PortalSantosTech.Models.NotificationDispatch", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<int>("FailedRecipients")
-                        .HasColumnType("integer")
-                        .HasColumnName("failed_recipients");
-
-                    b.Property<string>("FiltersJson")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("filters_json");
-
-                    b.Property<int>("NotificationTemplateId")
-                        .HasColumnType("integer")
-                        .HasColumnName("notification_template_id");
-
-                    b.Property<string>("TemplateName")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("template_name");
-
-                    b.Property<int>("TotalRecipients")
-                        .HasColumnType("integer")
-                        .HasColumnName("total_recipients");
-
-                    b.Property<string>("TriggeredByActorEmail")
-                        .HasColumnType("text")
-                        .HasColumnName("triggered_by_actor_email");
-
-                    b.Property<string>("TriggeredByActorId")
-                        .HasColumnType("text")
-                        .HasColumnName("triggered_by_actor_id");
-
-                    b.Property<string>("TriggeredByActorName")
-                        .HasColumnType("text")
-                        .HasColumnName("triggered_by_actor_name");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NotificationTemplateId");
-
-                    b.ToTable("notification_dispatch");
-                });
-
-            modelBuilder.Entity("API_PortalSantosTech.Models.NotificationDispatchRecipient", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ClassName")
-                        .HasColumnType("text")
-                        .HasColumnName("class_name");
-
-                    b.Property<string>("CourseName")
-                        .HasColumnType("text")
-                        .HasColumnName("course_name");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("FailureReason")
-                        .HasColumnType("text")
-                        .HasColumnName("failure_reason");
-
-                    b.Property<string>("Message")
-                        .HasColumnType("text")
-                        .HasColumnName("message");
-
-                    b.Property<int>("NotificationDispatchId")
-                        .HasColumnType("integer")
-                        .HasColumnName("notification_dispatch_id");
-
-                    b.Property<string>("RecipientEmail")
-                        .HasColumnType("text")
-                        .HasColumnName("recipient_email");
-
-                    b.Property<string>("RecipientName")
-                        .HasColumnType("text")
-                        .HasColumnName("recipient_name");
-
-                    b.Property<int?>("RecipientUserId")
-                        .HasColumnType("integer")
-                        .HasColumnName("recipient_user_id");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("status");
-
-                    b.Property<string>("Title")
-                        .HasColumnType("text")
-                        .HasColumnName("title");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NotificationDispatchId");
-
-                    b.ToTable("notification_dispatch_recipient");
-                });
-
-            modelBuilder.Entity("API_PortalSantosTech.Models.NotificationTemplate", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("CreatedByActorEmail")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by_actor_email");
-
-                    b.Property<string>("CreatedByActorId")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by_actor_id");
-
-                    b.Property<string>("CreatedByActorName")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by_actor_name");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("MessageTemplate")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("message_template");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("name");
-
-                    b.Property<string>("TitleTemplate")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("title_template");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.Property<string>("UpdatedByActorEmail")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by_actor_email");
-
-                    b.Property<string>("UpdatedByActorId")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by_actor_id");
-
-                    b.Property<string>("UpdatedByActorName")
-                        .HasColumnType("text")
-                        .HasColumnName("updated_by_actor_name");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("notification_template");
                 });
 
             modelBuilder.Entity("API_PortalSantosTech.Models.Phase", b =>
@@ -1932,55 +1700,6 @@ namespace API_PortalSantosTech.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Course");
-                });
-
-            modelBuilder.Entity("API_PortalSantosTech.Models.Notification", b =>
-                {
-                    b.HasOne("API_PortalSantosTech.Models.NotificationDispatch", "NotificationDispatch")
-                        .WithMany()
-                        .HasForeignKey("NotificationDispatchId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("API_PortalSantosTech.Models.NotificationTemplate", "NotificationTemplate")
-                        .WithMany()
-                        .HasForeignKey("NotificationTemplateId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("API_PortalSantosTech.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("NotificationDispatch");
-
-                    b.Navigation("NotificationTemplate");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("API_PortalSantosTech.Models.NotificationDispatch", b =>
-                {
-                    b.HasOne("API_PortalSantosTech.Models.NotificationTemplate", "NotificationTemplate")
-                        .WithMany()
-                        .HasForeignKey("NotificationTemplateId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("NotificationTemplate");
-                });
-
-            modelBuilder.Entity("API_PortalSantosTech.Models.NotificationDispatchRecipient", b =>
-                {
-                    b.HasOne("API_PortalSantosTech.Models.NotificationDispatch", "NotificationDispatch")
-                        .WithMany()
-                        .HasForeignKey("NotificationDispatchId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("NotificationDispatch");
                 });
 
             modelBuilder.Entity("API_PortalSantosTech.Models.Phase", b =>

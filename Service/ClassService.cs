@@ -11,15 +11,15 @@ public class ClassService : IClassService
     private readonly ILogger<ClassService> _logger;
     private readonly IClassRepository _classRepository;
     private readonly IModuleRepository _moduleRepository;
-    private readonly IProgressStudentPhaseRepository _progressStudentPhaseRepository;
+    private readonly IProgressRepository _progressRepository;
     private readonly IExerciseRepository _exerciseRepository;
 
-    public ClassService(ILogger<ClassService> logger, IClassRepository classRepository, IModuleRepository moduleRepository, IProgressStudentPhaseRepository progressStudentPhaseRepository, IExerciseRepository exerciseRepository)
+    public ClassService(ILogger<ClassService> logger, IClassRepository classRepository, IModuleRepository moduleRepository, IProgressRepository progressRepository, IExerciseRepository exerciseRepository)
     {
         _logger = logger;
         _classRepository = classRepository;
         _moduleRepository = moduleRepository;
-        _progressStudentPhaseRepository = progressStudentPhaseRepository;
+        _progressRepository = progressRepository;
         _exerciseRepository = exerciseRepository;
     }
 
@@ -110,14 +110,14 @@ public class ClassService : IClassService
                 //Atualiza progresso do player em relação a quantidade de respostas com o total de exercícios para calcular a porcentagem de progresso na ilha.
                 var totalExercises = flow.Count;
                 var progressAnswer = answersByFlow.Count();
-                var updateProgress = await _progressStudentPhaseRepository.UpdateProgressAsync(userId, phase.Id, progressAnswer, totalExercises);
+                var updateProgress = await _progressRepository.UpdateProgressAsync(userId, phase.Id, progressAnswer, totalExercises);
 
                 if (!updateProgress)
                 {
                     return CustomResponse<IEnumerable<IslandDTO>>.Fail("Erro ao atualizar progresso do aluno");
                 }
 
-                var progress = await _progressStudentPhaseRepository
+                var progress = await _progressRepository
                     .GetProgressByUserIdAndPhaseIdAsync(userId, phase.Id);
 
                 islands.Add(new IslandDTO

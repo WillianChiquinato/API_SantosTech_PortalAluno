@@ -7,7 +7,7 @@ public enum GoalType
 {
     CourseCompletion = 1,
     PhaseCompletion = 2,
-    TaskQuantity = 3,
+    PointQuantity = 3,
     TimeSpent = 4,
     Custom = 5
 }

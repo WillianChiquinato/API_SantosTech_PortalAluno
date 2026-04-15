@@ -20,11 +20,17 @@ public class BadgeRepository : IBadgeRepository
         var activatedGoals = await _efDbContext.GoalStudents
             .AsNoTracking()
             .Where(gs => gs.UserId == userId)
+            .Include(gs => gs.GoalReward)
+                .ThenInclude(gr => gr.Goal)
             .Select(gs => new ActivatedGoalResponse
             {
                 Id = gs.Id,
                 UserId = gs.UserId,
-                GoalId = gs.GoalId,
+                GoalRewardId = gs.GoalRewardId,
+                GoalName = gs.GoalReward!.Goal!.Name,
+                GoalDescription = gs.GoalReward.Goal.Description,
+                GoalType = gs.GoalReward.Goal.Type ?? GoalType.Custom,
+                RewardType = gs.GoalReward.RewardType,
                 CourseId = gs.CourseId,
                 Progress = gs.Progress,
                 IsCompleted = gs.IsCompleted,
@@ -32,7 +38,29 @@ public class BadgeRepository : IBadgeRepository
             })
             .ToListAsync();
 
-        return activatedGoals;
+        var goalIds = activatedGoals.Select(ag => ag.GoalRewardId).ToList();
+
+        var goalRewards = await _efDbContext.GoalRewards
+            .AsNoTracking()
+            .Where(gr => goalIds.Contains(gr.GoalId))
+            .ToListAsync();
+
+        var result = activatedGoals.Select(ag => new ActivatedGoalResponse
+        {
+            Id = ag.Id,
+            UserId = ag.UserId,
+            GoalRewardId = ag.GoalRewardId,
+            GoalName = ag.GoalName,
+            GoalDescription = ag.GoalDescription,
+            GoalType = ag.GoalType,
+            RewardType = ag.RewardType,
+            CourseId = ag.CourseId,
+            Progress = ag.Progress,
+            IsCompleted = ag.IsCompleted,
+            CompletedAt = ag.CompletedAt
+        }).ToList();
+
+        return result;
     }
 
     public async Task<List<Badge>> GetAllAsync()
@@ -61,11 +89,12 @@ public class BadgeRepository : IBadgeRepository
             .Select(g => new
             {
                 g.GoalId,
+                g.Id,
                 GoalName = g.Goal!.Name,
                 GoalDescription = g.Goal!.Description,
                 GoalType = g.Goal.Type,
                 GoalImageUrl = g.Goal.ImageUrl,
-                g.Points,
+                g.PointsReward,
                 BadgeId = g.Badge!.Id,
                 BadgeName = g.Badge.Name,
                 BadgeDescription = g.Badge.Description,
@@ -78,6 +107,7 @@ public class BadgeRepository : IBadgeRepository
             .Select(g => new GoalWithBadgesResponse
             {
                 GoalId = g.Key,
+                GoalRewardId = g.Select(gr => gr.Id).FirstOrDefault(),
                 GoalName = g.First().GoalName!,
                 GoalDescription = g.First().GoalDescription!,
                 GoalType = g.First().GoalType ?? GoalType.Custom,
@@ -91,23 +121,23 @@ public class BadgeRepository : IBadgeRepository
                 })
                 .DistinctBy(b => b.Id)
                 .ToList(),
-                Points = g.Select(gr => gr.Points).FirstOrDefault() ?? 0
+                Points = g.Select(gr => gr.PointsReward).FirstOrDefault() ?? 0
             })
             .ToList();
 
         return goalsWithBadges;
     }
 
-    public async Task<bool> UpdateActivatedGoalIdAsync(int goalId, int userId)
+    public async Task<bool> UpdateActivatedGoalIdAsync(int goalRewardId, int userId)
     {
-        var takeGoal = await _efDbContext.GoalRewards.FirstOrDefaultAsync(tg => tg.GoalId == goalId);
+        var takeGoal = await _efDbContext.GoalRewards.FirstOrDefaultAsync(tg => tg.Id == goalRewardId);
 
         if (takeGoal == null)
             return false;
 
         var addGoalInStudents = new GoalStudent
         {
-            GoalId = goalId,
+            GoalRewardId = takeGoal.Id,
             UserId = userId,
             CourseId = takeGoal.CourseId,
             Progress = 1,

@@ -23,7 +23,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPost]
-    [AllowAnonymous] // [SEC] login endpoint is public
+    [AllowAnonymous]
     [EnableRateLimiting("loginPolicy")]
     [Route("Login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
