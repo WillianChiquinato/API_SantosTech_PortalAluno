@@ -116,7 +116,7 @@ public class NotificationRepository : INotificationRepository
             .Distinct()
             .ToHashSet();
 
-        var query =
+        var enrolledStudentsQuery =
             from enrollment in _efDbContext.Enrollments.AsNoTracking()
             join user in _efDbContext.Users.AsNoTracking() on enrollment.UserId equals user.Id
             join classEntity in _efDbContext.Classes.AsNoTracking() on enrollment.ClassId equals classEntity.Id
@@ -125,29 +125,72 @@ public class NotificationRepository : INotificationRepository
             select new NotificationRecipientContext
             {
                 UserId = user.Id,
-                StudentName = user.Name,
-                StudentEmail = user.Email,
+                RecipientName = user.Name,
+                RecipientEmail = user.Email,
                 ClassId = classEntity.Id,
                 ClassName = classEntity.Name,
                 CourseId = course.Id,
                 CourseName = course.Name
             };
 
-        if (requestedStudentIds.Count > 0 || requestedClassIds.Count > 0 || requestedCourseIds.Count > 0)
+        if (requestedStudentIds.Count == 0 && requestedClassIds.Count == 0 && requestedCourseIds.Count == 0)
         {
-            query = query.Where(row =>
-                requestedStudentIds.Contains(row.UserId) ||
-                requestedClassIds.Contains(row.ClassId) ||
-                requestedCourseIds.Contains(row.CourseId));
+            return await _efDbContext.Users
+                .AsNoTracking()
+                .Select(user => new NotificationRecipientContext
+                {
+                    UserId = user.Id,
+                    RecipientName = user.Name,
+                    RecipientEmail = user.Email,
+                    ClassId = null,
+                    ClassName = null,
+                    CourseId = null,
+                    CourseName = null
+                })
+                .ToListAsync();
         }
 
-        var candidates = await query.ToListAsync();
+        var candidates = new List<NotificationRecipientContext>();
+
+        if (requestedClassIds.Count > 0 || requestedCourseIds.Count > 0)
+        {
+            enrolledStudentsQuery = enrolledStudentsQuery.Where(row =>
+                (row.ClassId.HasValue && requestedClassIds.Contains(row.ClassId.Value)) ||
+                (row.CourseId.HasValue && requestedCourseIds.Contains(row.CourseId.Value)));
+            candidates.AddRange(await enrolledStudentsQuery.ToListAsync());
+        }
+
+        if (requestedStudentIds.Count > 0)
+        {
+            var explicitlySelectedUsers = await
+                (from user in _efDbContext.Users.AsNoTracking()
+                 where requestedStudentIds.Contains(user.Id)
+                 join enrollment in _efDbContext.Enrollments.AsNoTracking() on user.Id equals enrollment.UserId into enrollmentGroup
+                 from enrollment in enrollmentGroup.DefaultIfEmpty()
+                 join classEntity in _efDbContext.Classes.AsNoTracking() on enrollment.ClassId equals classEntity.Id into classGroup
+                 from classEntity in classGroup.DefaultIfEmpty()
+                 join course in _efDbContext.Courses.AsNoTracking() on classEntity.CourseId equals course.Id into courseGroup
+                 from course in courseGroup.DefaultIfEmpty()
+                 select new NotificationRecipientContext
+                 {
+                     UserId = user.Id,
+                     RecipientName = user.Name,
+                     RecipientEmail = user.Email,
+                     ClassId = classEntity != null ? classEntity.Id : null,
+                     ClassName = classEntity != null ? classEntity.Name : null,
+                     CourseId = course != null ? course.Id : null,
+                     CourseName = course != null ? course.Name : null
+                 })
+                .ToListAsync();
+
+            candidates.AddRange(explicitlySelectedUsers);
+        }
 
         return candidates
             .GroupBy(candidate => candidate.UserId)
             .Select(group => group
                 .OrderByDescending(candidate => ComputeMatchScore(candidate, requestedStudentIds, requestedClassIds, requestedCourseIds))
-                .ThenBy(candidate => candidate.ClassId)
+                .ThenBy(candidate => candidate.ClassId ?? int.MaxValue)
                 .First())
             .ToList();
     }
@@ -243,10 +286,10 @@ public class NotificationRepository : INotificationRepository
         if (requestedStudentIds.Contains(candidate.UserId))
             return 300;
 
-        if (requestedClassIds.Contains(candidate.ClassId))
+        if (candidate.ClassId.HasValue && requestedClassIds.Contains(candidate.ClassId.Value))
             return 200;
 
-        if (requestedCourseIds.Contains(candidate.CourseId))
+        if (candidate.CourseId.HasValue && requestedCourseIds.Contains(candidate.CourseId.Value))
             return 100;
 
         return 0;
