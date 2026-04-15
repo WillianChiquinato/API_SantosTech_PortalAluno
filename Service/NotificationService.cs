@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.RegularExpressions;
 using API_PortalSantosTech.Interfaces;
 using API_PortalSantosTech.Interfaces.Repository;
@@ -200,12 +200,23 @@ public class NotificationService : INotificationService
             if (recipients.Count == 0)
                 return CustomResponse<NotificationDispatchResultDTO>.Fail("Nenhum destinatário foi encontrado para os filtros selecionados.");
 
+            var eligibleRecipients = recipients
+                .Where(recipient =>
+                    recipient.ClassId.HasValue &&
+                    recipient.CourseId.HasValue &&
+                    !string.IsNullOrWhiteSpace(recipient.ClassName) &&
+                    !string.IsNullOrWhiteSpace(recipient.CourseName))
+                .ToList();
+
+            if (eligibleRecipients.Count == 0)
+                return CustomResponse<NotificationDispatchResultDTO>.Fail("Nenhum destinatário com turma e curso vinculados foi encontrado para os filtros selecionados.");
+
             var now = DateTime.UtcNow;
-            var failedRecipients = BuildFailedRecipients(filters, recipients, now);
+            var failedRecipients = BuildFailedRecipients(filters, recipients, eligibleRecipients, now);
             var dispatchRecipients = new List<NotificationDispatchRecipient>();
             var notifications = new List<Notification>();
 
-            foreach (var recipient in recipients)
+            foreach (var recipient in eligibleRecipients)
             {
                 var rendered = RenderTemplate(template, recipient);
                 var metadataJson = JsonSerializer.Serialize(new NotificationMetadataDTO
@@ -218,8 +229,8 @@ public class NotificationService : INotificationService
                 dispatchRecipients.Add(new NotificationDispatchRecipient
                 {
                     RecipientUserId = recipient.UserId,
-                    RecipientName = recipient.StudentName,
-                    RecipientEmail = recipient.StudentEmail,
+                    RecipientName = recipient.RecipientName,
+                    RecipientEmail = recipient.RecipientEmail,
                     ClassName = recipient.ClassName,
                     CourseName = recipient.CourseName,
                     Title = rendered.Title,
@@ -438,8 +449,8 @@ public class NotificationService : INotificationService
             var placeholder = match.Groups[1].Value.Trim();
             return placeholder switch
             {
-                "aluno.nome" => recipient.StudentName ?? string.Empty,
-                "aluno.email" => recipient.StudentEmail ?? string.Empty,
+                "aluno.nome" => recipient.RecipientName ?? string.Empty,
+                "aluno.email" => recipient.RecipientEmail ?? string.Empty,
                 "turma.nome" => recipient.ClassName ?? string.Empty,
                 "curso.nome" => recipient.CourseName ?? string.Empty,
                 _ => match.Value
@@ -450,21 +461,44 @@ public class NotificationService : INotificationService
     private static List<NotificationDispatchRecipient> BuildFailedRecipients(
         NotificationDispatchFiltersRequest filters,
         IEnumerable<NotificationRecipientContext> recipients,
+        IEnumerable<NotificationRecipientContext> eligibleRecipients,
         DateTime now)
     {
-        var deliveredStudentIds = recipients
+        var deliveredStudentIds = eligibleRecipients
             .Select(recipient => recipient.UserId)
             .ToHashSet();
 
-        return (filters.StudentIds ?? [])
+        var failedRecipients = (filters.StudentIds ?? [])
             .Where(studentId => !deliveredStudentIds.Contains(studentId))
             .Select(studentId => new NotificationDispatchRecipient
             {
                 RecipientUserId = studentId,
                 Status = "failed",
-                FailureReason = "Aluno não encontrado no portal do Willian ou sem matrícula ativa.",
+                FailureReason = "Aluno não encontrado no portal do Aluno ou sem matrícula ativa.",
                 CreatedAt = now
             })
+            .ToList();
+
+        failedRecipients.AddRange(recipients
+            .Where(recipient =>
+                !deliveredStudentIds.Contains(recipient.UserId) &&
+                (!recipient.ClassId.HasValue ||
+                 !recipient.CourseId.HasValue ||
+                 string.IsNullOrWhiteSpace(recipient.ClassName) ||
+                 string.IsNullOrWhiteSpace(recipient.CourseName)))
+            .Select(recipient => new NotificationDispatchRecipient
+            {
+                RecipientUserId = recipient.UserId,
+                RecipientName = recipient.RecipientName,
+                RecipientEmail = recipient.RecipientEmail,
+                Status = "failed",
+                FailureReason = "Usuario sem turma ou curso vinculado.",
+                CreatedAt = now
+            }));
+
+        return failedRecipients
+            .GroupBy(recipient => recipient.RecipientUserId)
+            .Select(group => group.First())
             .ToList();
     }
 
@@ -513,3 +547,6 @@ public class NotificationService : INotificationService
         public string? CourseName { get; set; }
     }
 }
+
+
+

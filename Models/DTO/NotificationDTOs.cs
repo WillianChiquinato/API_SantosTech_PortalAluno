@@ -89,11 +89,11 @@ public class NotificationMarkAsReadRequest
 public class NotificationRecipientContext
 {
     public int UserId { get; set; }
-    public string? StudentName { get; set; }
-    public string? StudentEmail { get; set; }
-    public int ClassId { get; set; }
+    public string? RecipientName { get; set; }
+    public string? RecipientEmail { get; set; }
+    public int? ClassId { get; set; }
     public string? ClassName { get; set; }
-    public int CourseId { get; set; }
+    public int? CourseId { get; set; }
     public string? CourseName { get; set; }
 }
 
