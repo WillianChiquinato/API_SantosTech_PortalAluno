@@ -6,6 +6,7 @@ obj/
 out/
 publish/
 .codex-build/
+.codex-build-temp/
 ############################
 # Visual Studio
 ############################

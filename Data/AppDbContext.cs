@@ -41,6 +41,10 @@ public class AppDbContext : DbContext
 
     public DbSet<Logs> Logs { get; set; }
     public DbSet<LevelUser> LevelUsers { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
+    public DbSet<NotificationDispatch> NotificationDispatches { get; set; }
+    public DbSet<NotificationDispatchRecipient> NotificationDispatchRecipients { get; set; }
+    public DbSet<NotificationTemplate> NotificationTemplates { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<Configs> Configs { get; set; }
     public DbSet<CodeEmail> CodeEmails { get; set; }
