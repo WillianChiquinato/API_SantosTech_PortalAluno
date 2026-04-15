@@ -78,6 +78,24 @@ public class BadgeService : IBadgeService
         }
     }
 
+    public async Task<CustomResponse<bool>> GoalRewardOperationAsync(int goalRewardId, int userId)
+    {
+        try
+        {
+            var result = await _badgeRepository.GoalRewardOperationAsync(goalRewardId, userId);
+
+            if (result)
+                return CustomResponse<bool>.SuccessTrade(true);
+            else
+                return CustomResponse<bool>.Fail("Falha ao realizar a operação de recompensa");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao realizar a operação de recompensa para GoalReward ID {GoalRewardId} e User ID {UserId}", goalRewardId, userId);
+            return CustomResponse<bool>.Fail("Ocorreu um erro ao realizar a operação");
+        }
+    }
+
     public async Task<CustomResponse<bool>> UpdateActivatedGoalIdAsync(int goalRewardId, int userId)
     {
         try

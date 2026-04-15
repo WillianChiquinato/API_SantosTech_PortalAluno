@@ -9,10 +9,12 @@ namespace API_PortalSantosTech.Repository;
 public class BadgeRepository : IBadgeRepository
 {
     private readonly AppDbContext _efDbContext;
+    private readonly IPointRepository _pointRepository;
 
-    public BadgeRepository(AppDbContext efDbContext)
+    public BadgeRepository(AppDbContext efDbContext, IPointRepository pointRepository)
     {
         _efDbContext = efDbContext;
+        _pointRepository = pointRepository;
     }
 
     public async Task<List<ActivatedGoalResponse>> GetActivatedGoalsByUserIdAsync(int userId)
@@ -34,7 +36,9 @@ public class BadgeRepository : IBadgeRepository
                 CourseId = gs.CourseId,
                 Progress = gs.Progress,
                 IsCompleted = gs.IsCompleted,
-                CompletedAt = gs.CompletedAt
+                CompletedAt = gs.CompletedAt,
+                RewardClaimed = gs.RewardClaimed,
+                RewardClaimedAt = gs.RewardClaimedAt
             })
             .ToListAsync();
 
@@ -57,7 +61,9 @@ public class BadgeRepository : IBadgeRepository
             CourseId = ag.CourseId,
             Progress = ag.Progress,
             IsCompleted = ag.IsCompleted,
-            CompletedAt = ag.CompletedAt
+            CompletedAt = ag.CompletedAt,
+            RewardClaimed = ag.RewardClaimed,
+            RewardClaimedAt = ag.RewardClaimedAt
         }).ToList();
 
         return result;
@@ -147,6 +153,69 @@ public class BadgeRepository : IBadgeRepository
 
         _efDbContext.GoalStudents.Add(addGoalInStudents);
         await _efDbContext.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<bool> GoalRewardOperationAsync(int goalRewardId, int userId)
+    {
+        var goalStudent = await _efDbContext.GoalStudents
+            .FirstOrDefaultAsync(gs => gs.GoalRewardId == goalRewardId && gs.UserId == userId);
+
+        if (goalStudent == null || !goalStudent.IsCompleted)
+            return false;
+
+        if (goalStudent.RewardClaimed)
+            return false;
+
+        var goalReward = await _efDbContext.GoalRewards
+            .Include(gr => gr.Badge)
+            .FirstOrDefaultAsync(gr => gr.Id == goalRewardId);
+
+        if (goalReward == null)
+            return false;
+
+        // Badge - atribui todos os badges dos GoalRewards com o mesmo GoalId
+        var goalRewardsWithSameGoal = await _efDbContext.GoalRewards
+            .Include(gr => gr.Badge)
+            .Where(gr => gr.GoalId == goalReward.GoalId && gr.Badge != null)
+            .ToListAsync();
+
+        foreach (var gr in goalRewardsWithSameGoal)
+        {
+            var alreadyHasBadge = await _efDbContext.BadgeStudents
+                .AnyAsync(bs => bs.UserId == userId && bs.BadgeId == gr.Badge.Id);
+
+            if (!alreadyHasBadge)
+            {
+                _efDbContext.BadgeStudents.Add(new BadgeStudent
+                {
+                    BadgeId = gr.Badge.Id,
+                    UserId = userId,
+                    AwardedAt = DateTime.UtcNow
+                });
+            }
+        }
+
+        //Pontos
+        if (goalReward.PointsReward.HasValue && goalReward.PointsReward.Value > 0)
+        {
+            await _pointRepository.AddPointsAsync(new Point
+            {
+                UserId = userId,
+                Points = float.Parse(goalReward.PointsReward.Value.ToString()),
+                Reason = $"GoalReward:{goalReward.Id}",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+        }
+
+        //Marca como resgatado
+        goalStudent.RewardClaimed = true;
+        goalStudent.RewardClaimedAt = DateTime.UtcNow;
+
+        await _efDbContext.SaveChangesAsync();
+
         return true;
     }
 }

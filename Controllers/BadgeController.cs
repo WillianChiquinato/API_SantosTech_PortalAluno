@@ -66,4 +66,17 @@ public class BadgeController : ControllerBase
 
         return response.Success ? Ok(response) : BadRequest(response);
     }
+
+    [HttpPut]
+    [Route("GoalRewardOperation")]
+    public async Task<IActionResult> GoalRewardOperation([FromQuery] int goalRewardId)
+    {
+        var authenticatedUserId = User.GetAuthenticatedUserId();
+        if (authenticatedUserId is null)
+            return Unauthorized();
+
+        var response = await _badgeService.GoalRewardOperationAsync(goalRewardId, authenticatedUserId.Value);
+
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
 }

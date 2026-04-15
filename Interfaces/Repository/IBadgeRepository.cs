@@ -11,4 +11,5 @@ public interface IBadgeRepository
     Task<List<GoalWithBadgesResponse>> GetGoalsWithBadgesByCourseIdAsync(int courseId);
     Task<bool> UpdateActivatedGoalIdAsync(int goalRewardId, int userId);
     Task<List<ActivatedGoalResponse>> GetActivatedGoalsByUserIdAsync(int userId);
+    Task<bool> GoalRewardOperationAsync(int goalRewardId, int userId);
 }

@@ -143,4 +143,12 @@ public class PointRepository : IPointRepository
             PointsAwarded = calculatedPoints
         };
     }
+
+    public async Task<Point> AddPointsAsync(Point point)
+    {
+        _efDbContext.Points.Add(point);
+        await _efDbContext.SaveChangesAsync();
+        
+        return point;
+    }
 }

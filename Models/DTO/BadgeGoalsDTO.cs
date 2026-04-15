@@ -25,4 +25,14 @@ public class ActivatedGoalResponse
     public double Progress { get; set; }
     public bool IsCompleted { get; set; }
     public DateTime? CompletedAt { get; set; }
+    public bool RewardClaimed { get; set; }
+    public DateTime? RewardClaimedAt { get; set; }
+}
+
+public class GoalsRewardDTO
+{
+    public int GoalRewardId { get; set; }
+    public int UserId { get; set; }
+    public List<BadgeDTO> BadgesReward { get; set; } = new List<BadgeDTO>();
+    public double PointsReward { get; set; }
 }

@@ -29,6 +29,12 @@ public class GoalStudent
     [Column("completed_at")]
     public DateTime? CompletedAt { get; set; }
 
+    [Column("reward_claimed")]
+    public bool RewardClaimed { get; set; }
+
+    [Column("reward_claimed_at")]
+    public DateTime? RewardClaimedAt { get; set; }
+
     // 🔗 Relacionamentos
     [ForeignKey(nameof(UserId))]
     public User? User { get; set; }
