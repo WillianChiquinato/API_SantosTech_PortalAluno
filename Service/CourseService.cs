@@ -73,18 +73,4 @@ public class CourseService : ICourseService
             return CustomResponse<IEnumerable<Course>>.Fail("Erro ao buscar cursos pagos completos");
         }
     }
-
-    public async Task<CustomResponse<IEnumerable<ProgressPaidCourses>>> GetProgressUserPaidCoursesAsync(int userId)
-    {
-        try
-        {
-            var result = await _courseRepository.GetProgressUserPaidCoursesAsync(userId);
-            return result == null ? CustomResponse<IEnumerable<ProgressPaidCourses>>.Fail("Nenhum progresso encontrado") : CustomResponse<IEnumerable<ProgressPaidCourses>>.SuccessTrade(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Erro ao buscar progresso dos cursos pagos do usuário com ID {userId}");
-            return CustomResponse<IEnumerable<ProgressPaidCourses>>.Fail("Erro ao buscar progresso dos cursos pagos do usuário");
-        }
-    }
 }

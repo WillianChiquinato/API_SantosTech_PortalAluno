@@ -14,8 +14,8 @@ public class GoalStudent
     [Column("user_id")]
     public int UserId { get; set; }
 
-    [Column("goal_id")]
-    public int GoalId { get; set; }
+    [Column("goal_reward_id")]
+    public int GoalRewardId { get; set; }
 
     [Column("course_id")]
     public int CourseId { get; set; }
@@ -33,6 +33,6 @@ public class GoalStudent
     [ForeignKey(nameof(UserId))]
     public User? User { get; set; }
 
-    [ForeignKey(nameof(GoalId))]
-    public Goal? Goal { get; set; }
+    [ForeignKey(nameof(GoalRewardId))]
+    public GoalReward? GoalReward { get; set; }
 }

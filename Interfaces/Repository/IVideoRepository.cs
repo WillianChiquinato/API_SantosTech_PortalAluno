@@ -7,7 +7,4 @@ public interface IVideoRepository
 {
     Task<List<Video>> GetAllAsync();
     Task<Video?> GetByIdAsync(int id);
-    Task<List<VideoProgressDTO>> GetProgressUserVideosAsync(int userId);
-    Task<VideoProgressDTO> UpdateProgressVideoAsync(VideoProgressDTO progressData);
-    Task<VideoProgressDTO> AddProgressVideoAsync(VideoProgressDTO progressData);
 }

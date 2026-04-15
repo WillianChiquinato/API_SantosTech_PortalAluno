@@ -8,5 +8,4 @@ public interface ICourseRepository
     Task<Course?> GetByIdAsync(int id);
     Task<List<Course>> GetCoursesAvailablesAsync();
     Task<List<Course>> GetFullCoursesPaidAsync();
-    Task<List<ProgressPaidCourses>> GetProgressUserPaidCoursesAsync(int userId);
 }

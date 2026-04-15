@@ -78,11 +78,11 @@ public class BadgeService : IBadgeService
         }
     }
 
-    public async Task<CustomResponse<bool>> UpdateActivatedGoalIdAsync(int goalId, int userId)
+    public async Task<CustomResponse<bool>> UpdateActivatedGoalIdAsync(int goalRewardId, int userId)
     {
         try
         {
-            var updateResult = await _badgeRepository.UpdateActivatedGoalIdAsync(goalId, userId);
+            var updateResult = await _badgeRepository.UpdateActivatedGoalIdAsync(goalRewardId, userId);
 
             if (updateResult)
                 return CustomResponse<bool>.SuccessTrade(true);
@@ -91,7 +91,7 @@ public class BadgeService : IBadgeService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao atualizar o goalId ativado para Goal ID {GoalId}", goalId);
+            _logger.LogError(ex, "Erro ao atualizar o goalId ativado para Goal ID {GoalId}", goalRewardId);
             return CustomResponse<bool>.Fail("Ocorreu um erro ao atualizar os dados");
         }
     }

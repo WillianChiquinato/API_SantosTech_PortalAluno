@@ -47,16 +47,4 @@ public class CourseController : ControllerBase
         var response = await _courseService.GetByIdAsync(id);
         return response.Success ? Ok(response) : NotFound(response);
     }
-
-    [HttpGet]
-    [Route("GetProgressUserPaidCourses")]
-    public async Task<IActionResult> GetProgressUserPaidCourses()
-    {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
-        if (authenticatedUserId is null)
-            return Unauthorized();
-
-        var response = await _courseService.GetProgressUserPaidCoursesAsync(authenticatedUserId.Value);
-        return response.Success ? Ok(response) : NotFound(response);
-    }
 }

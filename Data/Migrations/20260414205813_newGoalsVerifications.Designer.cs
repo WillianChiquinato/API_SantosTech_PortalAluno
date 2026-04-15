@@ -3,6 +3,7 @@ using System;
 using API_PortalSantosTech.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace API_PortalSantosTech.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260414205813_newGoalsVerifications")]
+    partial class newGoalsVerifications
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -630,13 +633,9 @@ namespace API_PortalSantosTech.Data.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("goal_id");
 
-                    b.Property<double?>("PointsReward")
+                    b.Property<double?>("Points")
                         .HasColumnType("double precision")
                         .HasColumnName("points");
-
-                    b.Property<double?>("PointsTarget")
-                        .HasColumnType("double precision")
-                        .HasColumnName("points_target");
 
                     b.Property<int>("RewardType")
                         .HasColumnType("integer")
@@ -674,9 +673,9 @@ namespace API_PortalSantosTech.Data.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("course_id");
 
-                    b.Property<int>("GoalRewardId")
+                    b.Property<int>("GoalId")
                         .HasColumnType("integer")
-                        .HasColumnName("goal_reward_id");
+                        .HasColumnName("goal_id");
 
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("boolean")
@@ -692,7 +691,7 @@ namespace API_PortalSantosTech.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("GoalRewardId");
+                    b.HasIndex("GoalId");
 
                     b.HasIndex("UserId");
 
@@ -1641,9 +1640,9 @@ namespace API_PortalSantosTech.Data.Migrations
 
             modelBuilder.Entity("API_PortalSantosTech.Models.GoalStudent", b =>
                 {
-                    b.HasOne("API_PortalSantosTech.Models.GoalReward", "GoalReward")
+                    b.HasOne("API_PortalSantosTech.Models.Goal", "Goal")
                         .WithMany()
-                        .HasForeignKey("GoalRewardId")
+                        .HasForeignKey("GoalId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1653,7 +1652,7 @@ namespace API_PortalSantosTech.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("GoalReward");
+                    b.Navigation("Goal");
 
                     b.Navigation("User");
                 });

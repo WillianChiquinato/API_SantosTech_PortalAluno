@@ -38,11 +38,4 @@ public class CourseRepository : ICourseRepository
             .Where(c => c.IsPaid)
             .ToListAsync();
     }
-
-    public Task<List<ProgressPaidCourses>> GetProgressUserPaidCoursesAsync(int userId)
-    {
-        return _efDbContext.ProgressPaidCourses.AsNoTracking()
-            .Where(p => p.UserId == userId)
-            .ToListAsync();
-    }
 }

@@ -8,6 +8,4 @@ public interface IVideoService
 {
     Task<CustomResponse<IEnumerable<Video>>> GetAllAsync();
     Task<CustomResponse<Video>> GetByIdAsync(int id);
-    Task<CustomResponse<IEnumerable<VideoProgressDTO>>> GetProgressUserVideosAsync(int userId);
-    Task<CustomResponse<VideoProgressDTO>> SaveProgressVideoAsync(VideoProgressDTO progressData);
 }
