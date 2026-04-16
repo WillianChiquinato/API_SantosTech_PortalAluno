@@ -30,14 +30,18 @@ public class ClassRepository : IClassRepository
         return await _efDbContext.Classes.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
     }
 
-    public async Task<IEnumerable<Class>> GetClassesByUserIdAsync(int userId)
+    public async Task<Class?> GetClassByEnrollmentIdAsync(int enrollmentId, int userId)
     {
-        return await _efDbContext.Enrollments
+        var enrollment = await _efDbContext.Enrollments
             .AsNoTracking()
-            .Where(e => e.UserId == userId)
-            .Select(e => e.Class)
-            .Where(c => c != null)
-            .ToListAsync();
+            .FirstOrDefaultAsync(e => e.Id == enrollmentId && e.UserId == userId);
+
+        if (enrollment == null)
+        {
+            return null;
+        }
+
+        return await _efDbContext.Classes.AsNoTracking().FirstOrDefaultAsync(c => c.Id == enrollment.ClassId);
     }
 
     public async Task<IEnumerable<ClassRoom>> GetClassRoomsByClassIdAsync(int classId)

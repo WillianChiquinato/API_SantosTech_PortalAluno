@@ -34,14 +34,14 @@ public class ClassController : ControllerBase
     }
 
     [HttpGet]
-    [Route("GetClassesByUserId")]
-    public async Task<IActionResult> GetClassesByUserId()
+    [Route("GetClassByEnrollmentId")]
+    public async Task<IActionResult> GetClassByEnrollmentId([FromQuery] int enrollmentId)
     {
         var authenticatedUserId = User.GetAuthenticatedUserId();
         if (authenticatedUserId is null)
             return Unauthorized();
 
-        var response = await _classService.GetClassesByUserIdAsync(authenticatedUserId.Value);
+        var response = await _classService.GetClassByEnrollmentIdAsync(enrollmentId, authenticatedUserId.Value);
         
         return response.Success ? Ok(response) : NotFound(response);
     }

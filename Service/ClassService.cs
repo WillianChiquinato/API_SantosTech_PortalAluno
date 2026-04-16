@@ -549,17 +549,20 @@ public class ClassService : IClassService
         }
     }
 
-    public async Task<CustomResponse<IEnumerable<Class>>> GetClassesByUserIdAsync(int userId)
+    public async Task<CustomResponse<Class>> GetClassByEnrollmentIdAsync(int enrollmentId, int userId)
     {
         try
         {
-            var classes = await _classRepository.GetClassesByUserIdAsync(userId);
-            return CustomResponse<IEnumerable<Class>>.SuccessTrade(classes);
+            var classInfo = await _classRepository.GetClassByEnrollmentIdAsync(enrollmentId, userId);
+            if (classInfo == null)
+                return CustomResponse<Class>.Fail("Classe não encontrada para esta matrícula");
+
+            return CustomResponse<Class>.SuccessTrade(classInfo);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao buscar classes para o usuário com ID {UserId}", userId);
-            return CustomResponse<IEnumerable<Class>>.Fail("Ocorreu um erro ao buscar as classes");
+            _logger.LogError(ex, "Erro ao buscar classe para a matrícula com ID {EnrollmentId}", enrollmentId);
+            return CustomResponse<Class>.Fail("Ocorreu um erro ao buscar a classe");
         }
     }
 }
