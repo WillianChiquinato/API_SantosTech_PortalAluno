@@ -123,8 +123,8 @@ builder.Services.AddRateLimiter(options =>
             partitionKey: ResolveRateLimitKey(httpContext, isDevelopment),
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = isDevelopment ? 30 : 3,
-                Window = isDevelopment ? TimeSpan.FromMinutes(1) : TimeSpan.FromMinutes(15),
+                PermitLimit = isDevelopment ? 30 : 5,
+                Window = isDevelopment ? TimeSpan.FromMinutes(1) : TimeSpan.FromSeconds(30),
                 QueueLimit = 0
             }));
 });
