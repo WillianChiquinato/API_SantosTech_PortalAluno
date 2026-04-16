@@ -293,16 +293,28 @@ public class AuthController : ControllerBase
         });
     }
 
-    private async Task<API_PortalSantosTech.Models.User?> ResolveLocalStudentViewUserAsync(string? sourceUserId, string email)
+    private async Task<UserSafeDTO?> ResolveLocalStudentViewUserAsync(string? sourceUserId, string email)
     {
         if (int.TryParse(sourceUserId, out var userId))
         {
             var byId = await _userRepository.GetByIdAsync(userId);
             if (byId?.Email != null && string.Equals(byId.Email, email, StringComparison.OrdinalIgnoreCase))
-                return byId;
+                return byId.ToSafeDto();
         }
 
-        return await _userRepository.GetUserByEmail(email);
+        var byEmail = await _userRepository.GetUserByEmail(email);
+        var userSafeMapping = byEmail == null ? null : new UserSafeDTO
+        {
+            Id = byEmail.Id,
+            Name = byEmail.Name,
+            Email = byEmail.Email,
+            Role = byEmail.Role,
+            ProfilePictureUrl = byEmail.ProfilePictureUrl,
+            CreatedAt = byEmail.CreatedAt,
+            UpdatedAt = byEmail.UpdatedAt
+        };
+
+        return userSafeMapping;
     }
 
     private sealed class StudentViewExchangeResponse

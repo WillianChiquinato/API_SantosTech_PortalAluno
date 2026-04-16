@@ -6,10 +6,10 @@ namespace API_PortalSantosTech.Interfaces;
 
 public interface IUserService
 {
-    Task<CustomResponse<User>> GetUserByEmailAndPassword(string email, string password);
+    Task<CustomResponse<UserSafeDTO>> GetUserByEmailAndPassword(string email, string password);
     Task<CustomResponse<IEnumerable<User>>> GetAllAsync();
     Task<CustomResponse<User>> GetByIdAsync(int id);
-    Task<CustomResponse<UserProfileDataDTO>> GetProfileDataAsync(int id);
+    Task<CustomResponse<UserProfileDataDTO>> GetProfileDataAsync(int userId, int enrollmentId);
     Task<CustomResponse<User>> UpdateUserAsync(UpdateUserRequest request, int authenticatedUserId);
     Task<CustomResponse<ConfigsDTO>> GetConfigsAsync(int id);
     Task<CustomResponse<ConfigsDTO>> CreateNewConfigAsync(int id);

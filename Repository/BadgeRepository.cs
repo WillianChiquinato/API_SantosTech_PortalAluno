@@ -17,11 +17,11 @@ public class BadgeRepository : IBadgeRepository
         _pointRepository = pointRepository;
     }
 
-    public async Task<List<ActivatedGoalResponse>> GetActivatedGoalsByUserIdAsync(int userId)
+    public async Task<List<ActivatedGoalResponse>> GetActivatedGoalsByUserAndCourseIdAsync(int userId, int courseId)
     {
         var activatedGoals = await _efDbContext.GoalStudents
             .AsNoTracking()
-            .Where(gs => gs.UserId == userId)
+            .Where(gs => gs.UserId == userId && gs.CourseId == courseId)
             .Include(gs => gs.GoalReward)
                 .ThenInclude(gr => gr.Goal)
             .Select(gs => new ActivatedGoalResponse

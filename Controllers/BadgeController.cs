@@ -42,14 +42,14 @@ public class BadgeController : ControllerBase
     }
 
     [HttpGet]
-    [Route("GetActivatedGoalsByUserId")]
-    public async Task<IActionResult> GetActivatedGoalsByUserId()
+    [Route("GetActivatedGoalsByUserAndCourseId")]
+    public async Task<IActionResult> GetActivatedGoalsByUserAndCourseId([FromQuery] int courseId)
     {
         var authenticatedUserId = User.GetAuthenticatedUserId();
         if (authenticatedUserId is null)
             return Unauthorized();
 
-        var response = await _badgeService.GetActivatedGoalsByUserIdAsync(authenticatedUserId.Value);
+        var response = await _badgeService.GetActivatedGoalsByUserAndCourseIdAsync(authenticatedUserId.Value, courseId);
 
         return response.Success ? Ok(response) : NotFound(response);
     }

@@ -10,6 +10,6 @@ public interface IBadgeService
     Task<CustomResponse<Badge>> GetByIdAsync(int id);
     Task<CustomResponse<IEnumerable<GoalWithBadgesResponse>>> GetGoalsWithBadgesByCourseIdAsync(int courseId);
     Task<CustomResponse<bool>> UpdateActivatedGoalIdAsync(int goalRewardId, int userId);
-    Task<CustomResponse<IEnumerable<ActivatedGoalResponse>>> GetActivatedGoalsByUserIdAsync(int userId);
+    Task<CustomResponse<IEnumerable<ActivatedGoalResponse>>> GetActivatedGoalsByUserAndCourseIdAsync(int userId, int courseId);
     Task<CustomResponse<bool>> GoalRewardOperationAsync(int goalRewardId, int userId);
 }

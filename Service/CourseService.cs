@@ -1,6 +1,7 @@
 using API_PortalSantosTech.Interfaces;
 using API_PortalSantosTech.Interfaces.Repository;
 using API_PortalSantosTech.Models;
+using API_PortalSantosTech.Models.DTO;
 using API_PortalSantosTech.Response;
 
 namespace API_PortalSantosTech.Services;
@@ -71,6 +72,20 @@ public class CourseService : ICourseService
         {
             _logger.LogError(ex, "Erro ao buscar cursos pagos completos");
             return CustomResponse<IEnumerable<Course>>.Fail("Erro ao buscar cursos pagos completos");
+        }
+    }
+
+    public async Task<CustomResponse<IEnumerable<ClassCoursesDTO>>> GetUserCoursesAsync(int userId)
+    {
+        try
+        {
+            var result = await _courseRepository.GetUserCoursesAsync(userId);
+            return result == null ? CustomResponse<IEnumerable<ClassCoursesDTO>>.Fail("Nenhum curso encontrado para o usuário") : CustomResponse<IEnumerable<ClassCoursesDTO>>.SuccessTrade(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Erro ao buscar cursos para o usuário com ID {userId}");
+            return CustomResponse<IEnumerable<ClassCoursesDTO>>.Fail("Erro ao buscar cursos para o usuário");
         }
     }
 }

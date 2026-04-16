@@ -129,7 +129,7 @@ public class OAuthService : IOAuthService
                 return Fail("account_not_found", "Sua conta nao esta cadastrada no sistema.");
             }
 
-            return AuthenticateUser(linkedUser, httpContext);
+            return AuthenticateUser(linkedUser.ToSafeDto(), httpContext);
         }
 
         var existingUser = await _userRepository.GetUserByEmail(identityData.Email);
@@ -160,10 +160,10 @@ public class OAuthService : IOAuthService
             _logger.LogInformation("OAuth identity link already exists for provider {Provider}. UserId={UserId}", provider, existingUser.Id);
         }
 
-        return AuthenticateUser(existingUser, httpContext);
+        return AuthenticateUser(existingUser.ToSafeDto(), httpContext);
     }
 
-    private OAuthCallbackResultDto AuthenticateUser(User user, HttpContext httpContext)
+    private OAuthCallbackResultDto AuthenticateUser(UserSafeDTO user, HttpContext httpContext)
     {
         var token = _tokenService.GenerateToken(user);
         _tokenService.AppendAuthCookie(httpContext.Response, token, httpContext.Request.IsHttps);
@@ -172,7 +172,7 @@ public class OAuthService : IOAuthService
         return new OAuthCallbackResultDto
         {
             Success = true,
-            User = user.ToSafeDto()
+            User = user
         };
     }
 

@@ -51,11 +51,11 @@ public class PhaseService : IPhaseService
         }
     }
     
-    public async Task<CustomResponse<CurrentModuleDTO>> GetCurrentModuleUserAsync(int userId)
+    public async Task<CustomResponse<CurrentModuleDTO>> GetCurrentModuleUserAsync(int userId, int enrollmentId)
     {
         try
         {
-            var getEnrollMentUser = await _enrollmentRepository.GetByUserIdAsync(userId);
+            var getEnrollMentUser = await _enrollmentRepository.GetByIdAsync(enrollmentId);
             var GetClassInUser = await _classRepository.GetByIdAsync(getEnrollMentUser?.ClassId ?? 0);
 
             var currentModuleClass = await _classRepository.GetCurrentModuleByClassIdAsync(GetClassInUser?.Id ?? 0);

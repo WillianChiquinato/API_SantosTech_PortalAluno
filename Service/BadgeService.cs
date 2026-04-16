@@ -17,17 +17,17 @@ public class BadgeService : IBadgeService
         _badgeRepository = badgeRepository;
     }
 
-    public async Task<CustomResponse<IEnumerable<ActivatedGoalResponse>>> GetActivatedGoalsByUserIdAsync(int userId)
+    public async Task<CustomResponse<IEnumerable<ActivatedGoalResponse>>> GetActivatedGoalsByUserAndCourseIdAsync(int userId, int courseId)
     {
         try
         {
-            var result = await _badgeRepository.GetActivatedGoalsByUserIdAsync(userId);
+            var result = await _badgeRepository.GetActivatedGoalsByUserAndCourseIdAsync(userId, courseId);
             
             return CustomResponse<IEnumerable<ActivatedGoalResponse>>.SuccessTrade(result);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao buscar metas ativadas para o usuário ID {UserId}", userId);
+            _logger.LogError(ex, "Erro ao buscar metas ativadas para o usuário ID {UserId} e curso ID {CourseId}", userId, courseId);
             return CustomResponse<IEnumerable<ActivatedGoalResponse>>.Fail("Ocorreu um erro ao buscar os dados");
         }
     }

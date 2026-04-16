@@ -28,7 +28,7 @@ public class UserController : ControllerBase
     [Route("Login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var user = await _userService.GetUserByEmailAndPassword(request.Email, request.Password);
+        var user = await _userService.GetUserByEmailAndPassword(request.Email!, request.Password!);
 
         if (user.Errors.Count > 0)
             return BadRequest(user.Errors);
@@ -39,7 +39,7 @@ public class UserController : ControllerBase
         return Ok(new
         {
             token,
-            user = user.Result.ToSafeDto()
+            user = user.Result
         });
     }
 
@@ -86,17 +86,17 @@ public class UserController : ControllerBase
 
     [HttpGet]
     [Route("GetProfileData")]
-    public async Task<IActionResult> GetProfileData([FromQuery] int userid)
+    public async Task<IActionResult> GetProfileData([FromQuery] int enrollmentId)
     {
         var authenticatedUserId = User.GetAuthenticatedUserId();
         if (authenticatedUserId is null)
             return Unauthorized();
 
         // [SEC] IDOR fix: validate authenticated user matches requested ID or is admin
-        if (authenticatedUserId.Value != userid && !User.IsInRole("Admin"))
-            return Forbid();
+        // if (authenticatedUserId is null || !User.IsInRole("Admin"))
+        //     return Forbid();
 
-        var response = await _userService.GetProfileDataAsync(userid);
+        var response = await _userService.GetProfileDataAsync(authenticatedUserId.Value, enrollmentId);
         return response.Success ? Ok(response) : NotFound(response);
     }
 

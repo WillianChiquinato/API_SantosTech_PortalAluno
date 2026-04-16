@@ -47,4 +47,16 @@ public class CourseController : ControllerBase
         var response = await _courseService.GetByIdAsync(id);
         return response.Success ? Ok(response) : NotFound(response);
     }
+
+    [HttpGet]
+    [Route("GetUserCourses")]
+    public async Task<IActionResult> GetUserCourses()
+    {
+        var authenticatedUserId = User.GetAuthenticatedUserId();
+        if (authenticatedUserId is null)
+            return Unauthorized();
+
+        var response = await _courseService.GetUserCoursesAsync(authenticatedUserId.Value);
+        return Ok(response);
+    }
 }

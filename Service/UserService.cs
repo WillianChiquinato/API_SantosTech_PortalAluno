@@ -3,6 +3,7 @@ using API_PortalSantosTech.Interfaces.Repository;
 using API_PortalSantosTech.Models;
 using API_PortalSantosTech.Models.DTO;
 using API_PortalSantosTech.Response;
+using API_PortalSantosTech.Utils;
 
 namespace API_PortalSantosTech.Services;
 
@@ -27,29 +28,29 @@ public class UserService : IUserService
         _cloudflareR2Service = cloudflareR2Service;
     }
 
-    public async Task<CustomResponse<User>> GetUserByEmailAndPassword(string email, string password)
+    public async Task<CustomResponse<UserSafeDTO>> GetUserByEmailAndPassword(string email, string password)
     {
         try
         {
             if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
-                return CustomResponse<User>.Fail("Email ou senha inválidos");
+                return CustomResponse<UserSafeDTO>.Fail("Email ou senha inválidos");
 
             var result = await _userRepository.GetUserByEmail(email);
 
             if (result == null || string.IsNullOrWhiteSpace(result.PasswordHash))
-                return CustomResponse<User>.Fail("Email ou senha inválidos");
+                return CustomResponse<UserSafeDTO>.Fail("Email ou senha inválidos");
 
             var isValidPassword = VerifyPassword(password, result.PasswordHash);
 
             return !isValidPassword
-                ? CustomResponse<User>.Fail("Email ou senha inválidos")
-                : CustomResponse<User>.SuccessTrade(result);
+                ? CustomResponse<UserSafeDTO>.Fail("Email ou senha inválidos")
+                : CustomResponse<UserSafeDTO>.SuccessTrade(result.ToSafeDto());
         }
         catch (Exception e)
         {
             // [SEC] log error internally, return generic message to client
-            _logger.LogError(e, "Unexpected error in GetUserByEmailAndPassword");
-            return CustomResponse<User>.Fail("Ocorreu um erro ao processar sua requisição.");
+            _logger.LogError(e, "Erro interno no GetUserByEmailAndPassword");
+            return CustomResponse<UserSafeDTO>.Fail("Ocorreu um erro ao processar sua requisição.");
         }
     }
 
@@ -65,7 +66,7 @@ public class UserService : IUserService
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Unexpected error in GetAllAsync");
+            _logger.LogError(e, "Erro interno no GetAllAsync");
             return CustomResponse<IEnumerable<User>>.Fail("Ocorreu um erro ao processar sua requisicao.");
         }
     }
@@ -82,20 +83,20 @@ public class UserService : IUserService
         catch (Exception e)
         {
             // [SEC] log error internally, return generic message to client
-            _logger.LogError(e, "Unexpected error in GetByIdAsync");
+            _logger.LogError(e, "Erro interno no GetByIdAsync");
             return CustomResponse<User>.Fail("Ocorreu um erro ao processar sua requisição.");
         }
     }
 
-    public async Task<CustomResponse<UserProfileDataDTO>> GetProfileDataAsync(int id)
+    public async Task<CustomResponse<UserProfileDataDTO>> GetProfileDataAsync(int userId, int enrollmentId)
     {
         try
         {
-            var resultUser = await _userRepository.GetByIdAsync(id);
+            var resultUser = await _userRepository.GetByIdAsync(userId);
             //Mapear com UserRole.
             var roleUser = (int?)resultUser?.Role == 1 ? "Student" : (int?)resultUser?.Role == 2 ? "Teacher" : "Admin";
 
-            var resultPoints = await _userRepository.GetUserPointsAsync(id);
+            var resultPoints = await _userRepository.GetUserPointsAsync(userId);
             var resultLevel = await _levelUserRepository.GetAllAsync();
 
             var userLevel = resultLevel
@@ -107,10 +108,10 @@ public class UserService : IUserService
                 userLevel = resultLevel.OrderBy(l => l.PointsRequired).FirstOrDefault();
             }
 
-            var getEnrollMentUser = await _enrollmentRepository.GetByUserIdAsync(id);
+            var getEnrollMentUser = await _enrollmentRepository.GetByIdAsync(enrollmentId);
             var GetClassInUser = await _classRepository.GetByIdAsync(getEnrollMentUser?.ClassId ?? 0);
 
-            var UserBadges = await _badgeRepository.GetByUserIdAsync(id);
+            var UserBadges = await _badgeRepository.GetByUserIdAsync(userId);
 
             return resultUser == null
                 ? CustomResponse<UserProfileDataDTO>.Fail("Usuario não encontrado")
