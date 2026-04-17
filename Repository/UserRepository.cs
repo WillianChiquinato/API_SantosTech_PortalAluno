@@ -361,4 +361,18 @@ public class UserRepository : IUserRepository
             }
         };
     }
+
+    public async Task<bool> UpdateLastSeenAsync(int userId)
+    {
+        var user = await _efDbContext.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user != null)
+        {
+            user.LastSeenAt = DateTime.UtcNow;
+            
+            _efDbContext.Users.Update(user);
+            await _efDbContext.SaveChangesAsync();
+            return true;
+        }
+        return false;
+    }
 }

@@ -113,6 +113,18 @@ public class UserController : ControllerBase
         return response.Success ? Ok(response) : BadRequest(response);
     }
 
+    [HttpPatch]
+    [Route("UpdateLastSeen")]
+    public async Task<IActionResult> UpdateLastSeen()
+    {
+        var authenticatedUserId = User.GetAuthenticatedUserId();
+        if (authenticatedUserId is null)
+            return Unauthorized();
+
+        var response = await _userService.UpdateLastSeenAsync(authenticatedUserId.Value);
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
+
     [HttpPost]
     [AllowAnonymous] // [SEC] email verification is public
     [Route("SendEmailVerify")]

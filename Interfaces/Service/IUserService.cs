@@ -11,6 +11,7 @@ public interface IUserService
     Task<CustomResponse<User>> GetByIdAsync(int id);
     Task<CustomResponse<UserProfileDataDTO>> GetProfileDataAsync(int userId, int enrollmentId);
     Task<CustomResponse<User>> UpdateUserAsync(UpdateUserRequest request, int authenticatedUserId);
+    Task<CustomResponse<User>> UpdateLastSeenAsync(int userId);
     Task<CustomResponse<ConfigsDTO>> GetConfigsAsync(int id);
     Task<CustomResponse<ConfigsDTO>> CreateNewConfigAsync(int id);
     Task<CustomResponse<UpdateConfigRequest>> UpdateConfigsAsync(UpdateConfigRequest request);

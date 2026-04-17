@@ -21,4 +21,5 @@ public interface IUserRepository
     Task<PasswordRecoveryResult> SendPasswordRecoveryEmailAsync(string email);
     Task UpdatePasswordHashAsync(string email, string? passwordHash);
     Task<IEnumerable<UserWithAbilityDTO>> GetUserAbilitiesAsync(int userId);
+    Task<bool> UpdateLastSeenAsync(int userId);
 }

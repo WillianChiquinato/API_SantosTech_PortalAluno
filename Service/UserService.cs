@@ -385,4 +385,21 @@ public class UserService : IUserService
             return CustomResponse<IEnumerable<UserWithAbilityDTO>>.Fail("Ocorreu um erro ao processar sua requisicao.");
         }
     }
+
+    public async Task<CustomResponse<User>> UpdateLastSeenAsync(int userId)
+    {
+        try
+        {
+            var result = await _userRepository.UpdateLastSeenAsync(userId);
+
+            return result
+                ? CustomResponse<User>.SuccessTrade(new User { Id = userId, LastSeenAt = DateTime.UtcNow })
+                : CustomResponse<User>.Fail("Falha ao atualizar último acesso");
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Erro inesperado em UpdateLastSeenAsync");
+            return CustomResponse<User>.Fail("Ocorreu um erro ao processar sua requisicao.");
+        }
+    }
 }
