@@ -98,4 +98,16 @@ public class ExerciseController : ControllerBase
         var response = await _exerciseService.VerifyExistingAnswersAsync(exerciseId, authenticatedUserId.Value);
         return response.Success ? Ok(response) : NotFound(response);
     }
+
+    [HttpGet]
+    [Route("GetExercisesAnsweredCategorieByUser")]
+    public async Task<IActionResult> GetExercisesAnsweredCategorieByUser()
+    {
+        var authenticatedUserId = User.GetAuthenticatedUserId();
+        if (authenticatedUserId is null)
+            return Unauthorized();
+
+        var response = await _exerciseService.GetExercisesAnsweredByCategoryForUserAsync(authenticatedUserId.Value);
+        return response.Success ? Ok(response) : NotFound(response);
+    }
 }

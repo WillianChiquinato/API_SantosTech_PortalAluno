@@ -672,4 +672,63 @@ public class ExerciseRepository : IExerciseRepository
             .AsNoTracking()
             .ToListAsync();
     }
+
+    public async Task<List<ExerciseAnsweredByCategoryDTO>> GetExercisesAnsweredByCategoryForUserAsync(int userId)
+    {
+        var categoryCounts = await _efDbContext.Answers
+            .Where(a => a.UserId == userId)
+            .Join(_efDbContext.Exercises,
+                answer => answer.ExerciseId,
+                exercise => exercise.Id,
+                (answer, exercise) => new { answer.IsCorrect, answer.AnsweredAt, exercise.CategoryId })
+            .GroupBy(x => x.CategoryId)
+            .Select(g => new
+            {
+                CategoryId = g.Key,
+                TotalAnswered = g.Count(),
+                TotalCorrect = g.Count(x => x.IsCorrect),
+                LastUpdatedAnswerAt = g.Max(x => x.AnsweredAt)
+            })
+            .ToListAsync();
+
+        var categoryIds = categoryCounts
+            .Where(c => c.CategoryId.HasValue)
+            .Select(c => c.CategoryId!.Value)
+            .Distinct()
+            .ToList();
+
+        var categories = await _efDbContext.Categories
+            .Where(c => categoryIds.Contains(c.Id))
+            .AsNoTracking()
+            .ToDictionaryAsync(c => c.Id, c => c.Name ?? string.Empty);
+
+        return categoryCounts
+            .Select(c => new ExerciseAnsweredByCategoryDTO
+            {
+                CategoryName = c.CategoryId.HasValue && categories.TryGetValue(c.CategoryId.Value, out var name)
+                    ? name
+                    : string.Empty,
+                TotalAnswered = c.TotalAnswered,
+                TotalCorrect = c.TotalCorrect,
+                LastUpdatedAnswerAt = c.LastUpdatedAnswerAt
+            })
+            .OrderBy(c => c.status == "Desbloqueado" ? 1 : (c.status == "Em Progresso" ? 2 : 3))
+            .ToList();
+    }
+
+    public async Task<CategoryNoticeDTO?> GetCategoryNoticeAsync(int totalAnswered, int totalCorrect)
+    {
+        var percentNotice = totalAnswered > 0 ? (double)totalCorrect / totalAnswered * 100 : 0;
+
+        return percentNotice switch
+        {
+            var p when p >= 90 => new CategoryNoticeDTO { Notice = "A" },
+            var p when p >= 75 => new CategoryNoticeDTO { Notice = "B" },
+            var p when p >= 50 => new CategoryNoticeDTO { Notice = "C" },
+            var p when p >= 25 => new CategoryNoticeDTO { Notice = "D" },
+            var p when p >= 10 => new CategoryNoticeDTO { Notice = "E" },
+            var p when p >= 0 => new CategoryNoticeDTO { Notice = "F" },
+            _ => null,
+        };
+    }
 }

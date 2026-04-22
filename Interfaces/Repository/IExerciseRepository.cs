@@ -28,4 +28,6 @@ public interface IExerciseRepository
     Task<int> CreateQuestionBasedOnExerciseAsync(int exerciseId);
     Task CreateMultipleChoiceOptionAsync(CreateMultipleChoiceOptionDTO option);
     Task<List<Exercise>> GetExercisesByClassRoomIdsAsync(List<int> classRoomIds);
+    Task<List<ExerciseAnsweredByCategoryDTO>> GetExercisesAnsweredByCategoryForUserAsync(int userId);
+    Task<CategoryNoticeDTO?> GetCategoryNoticeAsync(int totalAnswered, int totalCorrect);
 }

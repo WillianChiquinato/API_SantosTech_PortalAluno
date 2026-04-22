@@ -61,6 +61,9 @@ public class Exercise
     [Column("exercise_period")]
     public DateTime ExercisePeriod { get; set; }
 
+    [Column("category")]
+    public int? CategoryId { get; set; }
+
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }
 
@@ -70,4 +73,7 @@ public class Exercise
     // 🔗 Relacionamento
     [ForeignKey(nameof(PhaseId))]
     public Phase? Phase { get; set; }
+
+    [ForeignKey(nameof(CategoryId))]
+    public Category? Category { get; set; }
 }

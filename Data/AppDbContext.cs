@@ -15,6 +15,7 @@ public class AppDbContext : DbContext
     public DbSet<ClassRoom> ClassRooms { get; set; }
     public DbSet<ClassRoomExercise> ClassRoomExercises { get; set; }
     public DbSet<Course> Courses { get; set; }
+    public DbSet<Category> Categories { get; set; }
     public DbSet<Enrollment> Enrollments { get; set; }
     public DbSet<Exercise> Exercises { get; set; }
     public DbSet<Goal> Goals { get; set; }

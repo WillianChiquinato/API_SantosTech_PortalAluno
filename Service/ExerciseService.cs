@@ -176,4 +176,26 @@ public class ExerciseService : IExerciseService
             return CustomResponse<VerifyDTO>.Fail("Ocorreu um erro ao verificar respostas existentes para o exercício especificado");
         }
     }
+
+    public async Task<CustomResponse<IEnumerable<ExerciseAnsweredByCategoryDTO>>> GetExercisesAnsweredByCategoryForUserAsync(int userId)
+    {
+        try
+        {
+            var result = await _exerciseRepository.GetExercisesAnsweredByCategoryForUserAsync(userId);
+            
+            foreach (var item in result)
+            {
+                var categoryNotice = await _exerciseRepository.GetCategoryNoticeAsync(item.TotalAnswered, item.TotalCorrect);
+
+                item.CategoryNotice = categoryNotice != null ? categoryNotice.Notice : null;
+            }
+
+            return CustomResponse<IEnumerable<ExerciseAnsweredByCategoryDTO>>.SuccessTrade(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar exercícios respondidos por categoria para o usuário {UserId}", userId);
+            return CustomResponse<IEnumerable<ExerciseAnsweredByCategoryDTO>>.Fail("Ocorreu um erro ao buscar os exercícios respondidos por categoria para o usuário especificado");
+        }
+    }
 }

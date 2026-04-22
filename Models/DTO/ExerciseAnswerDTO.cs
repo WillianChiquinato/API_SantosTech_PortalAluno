@@ -57,3 +57,25 @@ public class CreateMultipleChoiceOptionDTO
     public string? OptionText { get; set; }
     public bool IsCorrect { get; set; }
 }
+
+public class ExerciseAnswerSummaryDTO
+{
+    public int CategoryId { get; set; }
+    public int TotalAnswered { get; set; }
+    public int TotalCorrect { get; set; }
+}
+
+public class ExerciseAnsweredByCategoryDTO
+{
+    public string CategoryName { get; set; } = string.Empty;
+    public int TotalAnswered { get; set; }
+    public int TotalCorrect { get; set; }
+    public string? CategoryNotice { get; set; }
+    public string status => TotalAnswered == 0 ? "Não Iniciado" : (TotalAnswered >= 10 ? "Desbloqueado" : "Em Progresso");
+    public DateTime? LastUpdatedAnswerAt { get; set; }
+}
+
+public class CategoryNoticeDTO
+{
+    public string Notice { get; set; } = string.Empty;
+}
