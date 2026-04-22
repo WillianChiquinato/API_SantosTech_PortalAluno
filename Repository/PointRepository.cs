@@ -151,4 +151,75 @@ public class PointRepository : IPointRepository
         
         return point;
     }
+
+    public async Task<List<RankingPerCategoryDTO>> GetAvailableRankingPerCategoryAsync()
+    {
+        var allCategories = await _efDbContext.Categories
+            .AsNoTracking()
+            .ToListAsync();
+
+        var categoryRankings = new List<RankingPerCategoryDTO>();
+
+        foreach (var category in allCategories)
+        {
+            var exerciseIds = await _efDbContext.Exercises
+                .AsNoTracking()
+                .Where(exercise => exercise.CategoryId == category.Id)
+                .Select(exercise => exercise.Id)
+                .ToListAsync();
+
+            if (!exerciseIds.Any())
+                continue;
+
+            var totalExercises = exerciseIds.Count;
+
+            // Distinct exercises answered per user (no repetition by ExerciseId)
+            var userAnswerCounts = await _efDbContext.Answers
+                .AsNoTracking()
+                .Where(answer => exerciseIds.Contains(answer.ExerciseId))
+                .GroupBy(answer => new { answer.UserId, answer.ExerciseId })
+                .Select(g => g.Key.UserId)
+                .GroupBy(userId => userId)
+                .Select(g => new { UserId = g.Key, TotalAnswers = g.Count() })
+                .ToListAsync();
+
+            if (!userAnswerCounts.Any())
+                continue;
+
+            var userIds = userAnswerCounts.Select(u => u.UserId).ToList();
+
+            var users = await _efDbContext.Users
+                .AsNoTracking()
+                .Where(user => userIds.Contains(user.Id))
+                .Select(user => new { user.Id, user.Name, user.ProfilePictureUrl })
+                .ToListAsync();
+
+            var rankings = userAnswerCounts
+                .Select(u =>
+                {
+                    var user = users.FirstOrDefault(x => x.Id == u.UserId);
+                    return new CategoryRankingDTO
+                    {
+                        UserId = u.UserId,
+                        Name = user != null && !string.IsNullOrWhiteSpace(user.Name)
+                            ? user.Name
+                            : $"Aluno {u.UserId}",
+                        ProfilePictureUrl = user?.ProfilePictureUrl,
+                        TotalAnswers = u.TotalAnswers,
+                        PercentAvailable = (float)Math.Round(
+                            (double)u.TotalAnswers / totalExercises * 100, 2)
+                    };
+                })
+                .OrderByDescending(r => r.TotalAnswers)
+                .ToList();
+
+            categoryRankings.Add(new RankingPerCategoryDTO
+            {
+                Category = category.Name ?? string.Empty,
+                Rankings = rankings
+            });
+        }
+
+        return categoryRankings;
+    }
 }

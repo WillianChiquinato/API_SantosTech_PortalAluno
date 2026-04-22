@@ -88,4 +88,18 @@ public class PointService : IPointService
             return CustomResponse<ExercisePointAwardResult>.Fail("Erro ao adicionar pontos para o usuario");
         }
     }
+
+    public async Task<CustomResponse<IEnumerable<RankingPerCategoryDTO>>> GetAvailableRankingPerCategoryAsync()
+    {
+        try
+        {
+            var result = await _pointRepository.GetAvailableRankingPerCategoryAsync();
+            return CustomResponse<IEnumerable<RankingPerCategoryDTO>>.SuccessTrade(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching available ranking per category");
+            return CustomResponse<IEnumerable<RankingPerCategoryDTO>>.Fail("Error fetching available ranking per category");
+        }
+    }
 }

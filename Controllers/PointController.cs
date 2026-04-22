@@ -44,6 +44,15 @@ public class PointController : ControllerBase
         return Ok(response);
     }
 
+    [HttpGet]
+    [Route("GetAvailableRankingPerCategory")]
+    public async Task<IActionResult> GetAvailableRankingPerCategory()
+    {
+        var response = await _pointService.GetAvailableRankingPerCategoryAsync();
+        
+        return Ok(response);
+    }
+
     [HttpPost]
     [Route("AddPointsForUser")]
     public async Task<IActionResult> AddPointsForUser([FromBody] AddPointsDTO redeemPoints)

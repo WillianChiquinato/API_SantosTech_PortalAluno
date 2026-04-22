@@ -7,3 +7,18 @@ public class PointRankingDTO
     public string Name { get; set; } = string.Empty;
     public string? ProfilePictureUrl { get; set; }
 }
+
+public class RankingPerCategoryDTO
+{
+    public string Category { get; set; } = string.Empty;
+    public IEnumerable<CategoryRankingDTO> Rankings { get; set; } = new List<CategoryRankingDTO>();
+}
+
+public class CategoryRankingDTO
+{
+    public int UserId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? ProfilePictureUrl { get; set; }
+    public float PercentAvailable { get; set; }
+    public int TotalAnswers { get; set; }
+}
