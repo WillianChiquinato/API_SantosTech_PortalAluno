@@ -100,8 +100,8 @@ public class ExerciseController : ControllerBase
     }
 
     [HttpGet]
-    [Route("GetExercisesAnsweredCategorieByUser")]
-    public async Task<IActionResult> GetExercisesAnsweredCategorieByUser()
+    [Route("GetExercisesAnsweredCategoriesByUser")]
+    public async Task<IActionResult> GetExercisesAnsweredCategoriesByUser()
     {
         var authenticatedUserId = User.GetAuthenticatedUserId();
         if (authenticatedUserId is null)

@@ -207,7 +207,7 @@ public class PointRepository : IPointRepository
                         ProfilePictureUrl = user?.ProfilePictureUrl,
                         TotalAnswers = u.TotalAnswers,
                         PercentAvailable = (float)Math.Round(
-                            (double)u.TotalAnswers / totalExercises * 100, 2)
+                            (double)u.TotalAnswers / totalExercises * 100, 2),
                     };
                 })
                 .OrderByDescending(r => r.TotalAnswers)

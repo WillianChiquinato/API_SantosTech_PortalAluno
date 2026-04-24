@@ -21,4 +21,5 @@ public class CategoryRankingDTO
     public string? ProfilePictureUrl { get; set; }
     public float PercentAvailable { get; set; }
     public int TotalAnswers { get; set; }
+    public string? Status => TotalAnswers == 0 ? "Não Iniciado" : (TotalAnswers >= 10 ? "Desbloqueado" : "Em Progresso");
 }
