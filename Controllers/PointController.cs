@@ -8,7 +8,7 @@ namespace API_PortalSantosTech.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize] // [SEC] all endpoints require authenticated user
+// [Authorize]
 public class PointController : ControllerBase
 {
     private readonly IPointService _pointService;
@@ -19,7 +19,7 @@ public class PointController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin,Teacher")] // [SEC] full point ledger is restricted to privileged roles
+    [Authorize(Roles = "Admin,Teacher")]
     [Route("GetAllPoints")]
     public async Task<IActionResult> GetAll()
     {
@@ -28,7 +28,7 @@ public class PointController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin,Teacher")] // [SEC] direct point lookup is restricted to privileged roles
+    [Authorize(Roles = "Admin,Teacher")]
     [Route("GetPointById")]
     public async Task<IActionResult> GetById([FromQuery] int id)
     {
@@ -37,7 +37,7 @@ public class PointController : ControllerBase
     }
 
     [HttpGet]
-    [Route("GetRanking")]
+    [Route("GetRankingPoints")]
     public async Task<IActionResult> GetRanking()
     {
         var response = await _pointService.GetRankingAsync();
@@ -53,6 +53,14 @@ public class PointController : ControllerBase
         return Ok(response);
     }
 
+    [HttpGet]
+    [Route("GetRankingEvent")]
+    public async Task<IActionResult> GetRankingEvent([FromQuery] int eventType)
+    {
+        var response = await _pointService.GetRankingEventAsync(eventType);
+        return Ok(response);
+    }
+
     [HttpPost]
     [Route("AddPointsForUser")]
     public async Task<IActionResult> AddPointsForUser([FromBody] AddPointsDTO redeemPoints)
@@ -61,7 +69,6 @@ public class PointController : ControllerBase
         if (authenticatedUserId is null)
             return Unauthorized();
 
-        // [SEC] bind the point award to the authenticated user and compute points on the server
         redeemPoints.UserId = authenticatedUserId.Value;
         var response = await _pointService.AddPointsForUserAsync(redeemPoints);
 

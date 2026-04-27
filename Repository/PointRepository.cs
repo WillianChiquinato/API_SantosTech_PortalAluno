@@ -222,4 +222,41 @@ public class PointRepository : IPointRepository
 
         return categoryRankings;
     }
+
+    public async Task<List<EventRankingDTO>> GetRankingEventAsync(int eventType)
+    {
+        var now = DateTime.UtcNow;
+
+        var getCurrentEventAvailables = await _efDbContext.RankingEvents
+            .AsNoTracking()
+            .Where(e =>
+                e.StartTime <= now &&
+                e.StartTime.AddMinutes(e.DurationMinutes) >= now &&
+                e.EventType == (EventType)eventType)
+            .ToListAsync();
+
+        var rewardsFromEvent = await _efDbContext.RankingAwards
+            .AsNoTracking()
+            .Where(r => getCurrentEventAvailables.Select(e => e.Id).Contains(r.EventId))
+            .ToListAsync();
+
+        return getCurrentEventAvailables.Select(e => new EventRankingDTO
+        {
+            EventName = e.EventName,
+            EventType = e.EventType.ToString(),
+            DurationMinutes = e.DurationMinutes,
+            StartTime = e.StartTime,
+            EventRankingAwards = rewardsFromEvent
+                .Where(r => r.EventId == e.Id)
+                .Select(r => new EventRankingAwardDTO
+                {
+                    AwardName = r.AwardName,
+                    AwardPositionRanking = r.AwardPositionRanking,
+                    AwardDescription = r.AwardDescription,
+                    AwardPictureUrl = r.AwardPictureUrl
+                })
+                .OrderBy(r => r.AwardPositionRanking)
+                .ToList() ?? new List<EventRankingAwardDTO>()
+        }).ToList();
+    }
 }

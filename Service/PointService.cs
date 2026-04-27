@@ -26,8 +26,8 @@ public class PointService : IPointService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching points");
-            return CustomResponse<IEnumerable<Point>>.Fail("Error fetching points");
+            _logger.LogError(ex, "Erro ao buscar pontos");
+            return CustomResponse<IEnumerable<Point>>.Fail("Erro ao buscar pontos");
         }
     }
 
@@ -42,8 +42,8 @@ public class PointService : IPointService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching point by ID");
-            return CustomResponse<Point>.Fail("Error fetching point by ID");
+            _logger.LogError(ex, "Erro ao buscar ponto por ID");
+            return CustomResponse<Point>.Fail("Erro ao buscar ponto por ID");
         }
     }
 
@@ -56,8 +56,8 @@ public class PointService : IPointService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching point ranking");
-            return CustomResponse<IEnumerable<PointRankingDTO>>.Fail("Error fetching point ranking");
+            _logger.LogError(ex, "Erro ao buscar ranking de pontos");
+            return CustomResponse<IEnumerable<PointRankingDTO>>.Fail("Erro ao buscar ranking de pontos");
         }
     }
 
@@ -98,8 +98,22 @@ public class PointService : IPointService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching available ranking per category");
-            return CustomResponse<IEnumerable<RankingPerCategoryDTO>>.Fail("Error fetching available ranking per category");
+            _logger.LogError(ex, "Erro ao buscar ranking disponível por categoria");
+            return CustomResponse<IEnumerable<RankingPerCategoryDTO>>.Fail("Erro ao buscar ranking disponível por categoria");
+        }
+    }
+
+    public async Task<CustomResponse<IEnumerable<EventRankingDTO>>> GetRankingEventAsync(int eventType)
+    {
+        try
+        {
+            var result = await _pointRepository.GetRankingEventAsync(eventType);
+            return CustomResponse<IEnumerable<EventRankingDTO>>.SuccessTrade(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar ranking de eventos");
+            return CustomResponse<IEnumerable<EventRankingDTO>>.Fail("Erro ao buscar ranking de eventos");
         }
     }
 }

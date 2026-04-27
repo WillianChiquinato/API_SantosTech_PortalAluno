@@ -3,6 +3,7 @@ using System;
 using API_PortalSantosTech.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace API_PortalSantosTech.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260427212638_rankingSystemAwards")]
+    partial class rankingSystemAwards
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1495,12 +1498,13 @@ namespace API_PortalSantosTech.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("event_name");
 
-                    b.Property<int>("EventType")
-                        .HasColumnType("integer")
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasColumnType("text")
                         .HasColumnName("event_type");
 
                     b.Property<DateTime>("StartTime")
-                        .HasColumnType("timestamp with time zone")
+                        .HasColumnType("timestamp")
                         .HasColumnName("start_time");
 
                     b.HasKey("Id");

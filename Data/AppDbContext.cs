@@ -49,4 +49,7 @@ public class AppDbContext : DbContext
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<Configs> Configs { get; set; }
     public DbSet<CodeEmail> CodeEmails { get; set; }
+    public DbSet<RankingEvent> RankingEvents { get; set; }
+    public DbSet<RankingAward> RankingAwards { get; set; }
+    public DbSet<RankingHistory> RankingHistories { get; set; }
 }

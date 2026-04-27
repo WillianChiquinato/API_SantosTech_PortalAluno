@@ -10,5 +10,6 @@ public interface IPointService
     Task<CustomResponse<Point>> GetByIdAsync(int id);
     Task<CustomResponse<IEnumerable<PointRankingDTO>>> GetRankingAsync();
     Task<CustomResponse<IEnumerable<RankingPerCategoryDTO>>> GetAvailableRankingPerCategoryAsync();
+    Task<CustomResponse<IEnumerable<EventRankingDTO>>> GetRankingEventAsync(int eventType);
     Task<CustomResponse<ExercisePointAwardResult>> AddPointsForUserAsync(AddPointsDTO redeemPoints);
 }
