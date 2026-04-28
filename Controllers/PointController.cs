@@ -62,6 +62,14 @@ public class PointController : ControllerBase
     }
 
     [HttpPost]
+    [Route("ScheduleRankingEvent")]
+    public async Task<IActionResult> ScheduleRankingEvent([FromBody] int eventId)
+    {
+        var response = await _pointService.ScheduleRankingEventAsync(eventId);
+        return Ok(response);
+    }
+
+    [HttpPost]
     [Route("AddPointsForUser")]
     public async Task<IActionResult> AddPointsForUser([FromBody] AddPointsDTO redeemPoints)
     {

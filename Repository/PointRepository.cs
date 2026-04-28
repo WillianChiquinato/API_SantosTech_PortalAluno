@@ -259,4 +259,12 @@ public class PointRepository : IPointRepository
                 .ToList() ?? new List<EventRankingAwardDTO>()
         }).ToList();
     }
+
+    public async Task<RankingEvent?> ScheduleRankingEventAsync(int eventId)
+    {
+        var eventToSchedule = await _efDbContext.RankingEvents
+            .FirstOrDefaultAsync(e => e.Id == eventId);
+
+        return eventToSchedule;
+    }
 }

@@ -10,6 +10,7 @@ public interface IPointRepository
     Task<List<PointRankingDTO>> GetRankingAsync();
     Task<List<RankingPerCategoryDTO>> GetAvailableRankingPerCategoryAsync();
     Task<List<EventRankingDTO>> GetRankingEventAsync(int eventType);
+    Task<RankingEvent?> ScheduleRankingEventAsync(int eventId);
     Task<ExercisePointAwardResult> AddPointsForUserAsync(int userId, int exerciseId);
     Task<Point> AddPointsAsync(Point point);
 }

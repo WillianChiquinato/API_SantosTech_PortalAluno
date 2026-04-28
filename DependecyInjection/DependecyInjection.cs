@@ -25,6 +25,14 @@ namespace API_PortalSantosTech.DependencyInjection
                 .WithScopedLifetime()
             );
 
+            // Jobs
+            services.Scan(scan => scan
+                .FromAssemblies(assembly)
+                .AddClasses(c => c.Where(t => t.Name.EndsWith("Job")))
+                .AsSelf()
+                .WithScopedLifetime()
+            );
+
             return services;
         }
     }

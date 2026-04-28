@@ -1,8 +1,10 @@
 using API_PortalSantosTech.Interfaces;
 using API_PortalSantosTech.Interfaces.Repository;
+using API_PortalSantosTech.Jobs;
 using API_PortalSantosTech.Models;
 using API_PortalSantosTech.Models.DTO;
 using API_PortalSantosTech.Response;
+using Hangfire;
 
 namespace API_PortalSantosTech.Services;
 
@@ -114,6 +116,31 @@ public class PointService : IPointService
         {
             _logger.LogError(ex, "Erro ao buscar ranking de eventos");
             return CustomResponse<IEnumerable<EventRankingDTO>>.Fail("Erro ao buscar ranking de eventos");
+        }
+    }
+
+    public async Task<CustomResponse<bool>> ScheduleRankingEventAsync(int eventId)
+    {
+        try
+        {
+            var rankingEvent = await _pointRepository.ScheduleRankingEventAsync(eventId);
+
+            if (rankingEvent == null)
+                return CustomResponse<bool>.Fail("Evento de ranking não encontrado.");
+
+            var endTime = rankingEvent.StartTime.AddMinutes(rankingEvent.DurationMinutes);
+            var scheduleAt = endTime.AddDays(1);
+
+            BackgroundJob.Schedule<RankingEventJob>(
+                job => job.ProcessRankingRewardsAsync(eventId),
+                scheduleAt);
+
+            return CustomResponse<bool>.SuccessTrade(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao agendar evento de ranking");
+            return CustomResponse<bool>.Fail("Erro ao agendar evento de ranking");
         }
     }
 }
