@@ -83,8 +83,14 @@ public class RankingEventJob
             return;
         }
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         var historyEntries = new List<RankingHistory>();
+        var existingHistory = await _db.RankingHistories
+            .Where(h => h.EventId == eventId)
+            .ToListAsync();
+
+        if (existingHistory.Any())
+            _db.RankingHistories.RemoveRange(existingHistory);
 
         foreach (var award in awards)
         {
@@ -114,4 +120,3 @@ public class RankingEventJob
         }
     }
 }
-

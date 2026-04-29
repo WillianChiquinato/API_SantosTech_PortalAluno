@@ -1499,6 +1499,10 @@ namespace API_PortalSantosTech.Data.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("event_type");
 
+                    b.Property<string>("ScheduledJobId")
+                        .HasColumnType("text")
+                        .HasColumnName("scheduled_job_id");
+
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("start_time");

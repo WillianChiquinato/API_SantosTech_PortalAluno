@@ -91,12 +91,31 @@ public class PointService : IPointService
         }
     }
 
-    public async Task<CustomResponse<IEnumerable<RankingPerCategoryDTO>>> GetAvailableRankingPerCategoryAsync()
+    public async Task<CustomResponse<IEnumerable<RankingCategoryDTO>>> GetRankingCategoriesAsync()
     {
         try
         {
-            var result = await _pointRepository.GetAvailableRankingPerCategoryAsync();
-            return CustomResponse<IEnumerable<RankingPerCategoryDTO>>.SuccessTrade(result);
+            var result = await _pointRepository.GetRankingCategoriesAsync();
+            return CustomResponse<IEnumerable<RankingCategoryDTO>>.SuccessTrade(result, result.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar categorias disponíveis para ranking");
+            return CustomResponse<IEnumerable<RankingCategoryDTO>>.Fail("Erro ao buscar categorias disponíveis para ranking");
+        }
+    }
+
+    public async Task<CustomResponse<IEnumerable<RankingPerCategoryDTO>>> GetAvailableRankingPerCategoryAsync(string? category, int? limit, int offset)
+    {
+        try
+        {
+            int? normalizedLimit = limit.HasValue ? Math.Clamp(limit.Value, 1, 100) : null;
+            var normalizedOffset = Math.Max(offset, 0);
+            var (items, totalRows) = await _pointRepository.GetAvailableRankingPerCategoryAsync(
+                category,
+                normalizedLimit,
+                normalizedOffset);
+            return CustomResponse<IEnumerable<RankingPerCategoryDTO>>.SuccessTrade(items, totalRows);
         }
         catch (Exception ex)
         {
@@ -119,6 +138,113 @@ public class PointService : IPointService
         }
     }
 
+    public async Task<CustomResponse<IEnumerable<RankingEventHistoryDTO>>> GetRankingEventHistoryAsync(int? eventType, int limit, int offset)
+    {
+        try
+        {
+            if (eventType.HasValue && !Enum.IsDefined(typeof(EventType), eventType.Value))
+                return CustomResponse<IEnumerable<RankingEventHistoryDTO>>.Fail("Tipo do evento inválido.");
+
+            var normalizedLimit = Math.Clamp(limit, 1, 100);
+            var normalizedOffset = Math.Max(offset, 0);
+            var (items, totalRows) = await _pointRepository.GetRankingEventHistoryAsync(
+                eventType,
+                normalizedLimit,
+                normalizedOffset);
+            return CustomResponse<IEnumerable<RankingEventHistoryDTO>>.SuccessTrade(items, totalRows);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar histórico de ranking de eventos");
+            return CustomResponse<IEnumerable<RankingEventHistoryDTO>>.Fail("Erro ao buscar histórico de ranking de eventos");
+        }
+    }
+
+    public async Task<CustomResponse<EventRankingDTO>> GetRankingEventByIdAsync(int id)
+    {
+        try
+        {
+            var result = await _pointRepository.GetRankingEventByIdAsync(id);
+            return result == null
+                ? CustomResponse<EventRankingDTO>.Fail("Evento de ranking não encontrado.")
+                : CustomResponse<EventRankingDTO>.SuccessTrade(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar evento de ranking por ID");
+            return CustomResponse<EventRankingDTO>.Fail("Erro ao buscar evento de ranking por ID");
+        }
+    }
+
+    public async Task<CustomResponse<RankingEventDTO>> CreateRankingEventAsync(RankingEventUpsertDTO request)
+    {
+        try
+        {
+            var validationError = ValidateRankingEvent(request);
+            if (validationError != null)
+                return CustomResponse<RankingEventDTO>.Fail(validationError);
+
+            var result = await _pointRepository.CreateRankingEventAsync(request);
+            var scheduleResponse = await ScheduleRankingEventAsync(result.Id);
+
+            if (!scheduleResponse.Success)
+                _logger.LogWarning("Evento {EventId} criado, mas não foi possível agendar o job.", result.Id);
+
+            return CustomResponse<RankingEventDTO>.SuccessTrade(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao criar evento de ranking");
+            return CustomResponse<RankingEventDTO>.Fail("Erro ao criar evento de ranking");
+        }
+    }
+
+    public async Task<CustomResponse<RankingEventDTO>> UpdateRankingEventAsync(int id, RankingEventUpsertDTO request)
+    {
+        try
+        {
+            var validationError = ValidateRankingEvent(request);
+            if (validationError != null)
+                return CustomResponse<RankingEventDTO>.Fail(validationError);
+
+            var result = await _pointRepository.UpdateRankingEventAsync(id, request);
+            if (result == null)
+                return CustomResponse<RankingEventDTO>.Fail("Evento de ranking não encontrado.");
+
+            var scheduleResponse = await ScheduleRankingEventAsync(id);
+
+            if (!scheduleResponse.Success)
+                _logger.LogWarning("Evento {EventId} atualizado, mas não foi possível reagendar o job.", id);
+
+            return CustomResponse<RankingEventDTO>.SuccessTrade(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao atualizar evento de ranking");
+            return CustomResponse<RankingEventDTO>.Fail("Erro ao atualizar evento de ranking");
+        }
+    }
+
+    public async Task<CustomResponse<bool>> DeleteRankingEventAsync(int id)
+    {
+        try
+        {
+            var deletedEvent = await _pointRepository.DeleteRankingEventAsync(id);
+            if (deletedEvent == null)
+                return CustomResponse<bool>.Fail("Evento de ranking não encontrado.");
+
+            if (!string.IsNullOrWhiteSpace(deletedEvent.ScheduledJobId))
+                BackgroundJob.Delete(deletedEvent.ScheduledJobId);
+
+            return CustomResponse<bool>.SuccessTrade(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao remover evento de ranking");
+            return CustomResponse<bool>.Fail("Erro ao remover evento de ranking");
+        }
+    }
+
     public async Task<CustomResponse<bool>> ScheduleRankingEventAsync(int eventId)
     {
         try
@@ -129,11 +255,19 @@ public class PointService : IPointService
                 return CustomResponse<bool>.Fail("Evento de ranking não encontrado.");
 
             var endTime = rankingEvent.StartTime.AddMinutes(rankingEvent.DurationMinutes);
-            var scheduleAt = endTime.AddDays(1);
+            var scheduleAt = endTime;
 
-            BackgroundJob.Schedule<RankingEventJob>(
-                job => job.ProcessRankingRewardsAsync(eventId),
-                scheduleAt);
+            if (!string.IsNullOrWhiteSpace(rankingEvent.ScheduledJobId))
+                BackgroundJob.Delete(rankingEvent.ScheduledJobId);
+
+            var scheduledJobId = scheduleAt <= DateTime.UtcNow
+                ? BackgroundJob.Enqueue<RankingEventJob>(
+                    job => job.ProcessRankingRewardsAsync(eventId))
+                : BackgroundJob.Schedule<RankingEventJob>(
+                    job => job.ProcessRankingRewardsAsync(eventId),
+                    scheduleAt);
+
+            await _pointRepository.UpdateRankingEventScheduledJobIdAsync(eventId, scheduledJobId);
 
             return CustomResponse<bool>.SuccessTrade(true);
         }
@@ -142,5 +276,25 @@ public class PointService : IPointService
             _logger.LogError(ex, "Erro ao agendar evento de ranking");
             return CustomResponse<bool>.Fail("Erro ao agendar evento de ranking");
         }
+    }
+
+    private static string? ValidateRankingEvent(RankingEventUpsertDTO request)
+    {
+        if (string.IsNullOrWhiteSpace(request.EventName))
+            return "Nome do evento é obrigatório.";
+
+        if (!Enum.IsDefined(typeof(EventType), request.EventType))
+            return "Tipo do evento inválido.";
+
+        if (request.DurationMinutes <= 0)
+            return "Duração do evento deve ser maior que zero.";
+
+        if (request.Awards.Any(a => string.IsNullOrWhiteSpace(a.AwardName)))
+            return "Nome do prêmio é obrigatório.";
+
+        if (request.Awards.Any(a => a.AwardPositionRanking <= 0))
+            return "Posição do prêmio deve ser maior que zero.";
+
+        return null;
     }
 }

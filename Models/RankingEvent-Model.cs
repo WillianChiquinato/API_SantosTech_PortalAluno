@@ -28,4 +28,7 @@ public class RankingEvent
 
     [Column("start_time", TypeName = "timestamp with time zone")]
     public DateTime StartTime { get; set; }
+
+    [Column("scheduled_job_id")]
+    public string? ScheduledJobId { get; set; }
 }

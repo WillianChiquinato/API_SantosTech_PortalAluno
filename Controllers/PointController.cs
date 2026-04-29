@@ -46,10 +46,21 @@ public class PointController : ControllerBase
 
     [HttpGet]
     [Route("GetAvailableRankingPerCategory")]
-    public async Task<IActionResult> GetAvailableRankingPerCategory()
+    public async Task<IActionResult> GetAvailableRankingPerCategory(
+        [FromQuery] string? category,
+        [FromQuery] int? limit,
+        [FromQuery] int offset = 0)
     {
-        var response = await _pointService.GetAvailableRankingPerCategoryAsync();
+        var response = await _pointService.GetAvailableRankingPerCategoryAsync(category, limit, offset);
         
+        return Ok(response);
+    }
+
+    [HttpGet]
+    [Route("RankingCategories")]
+    public async Task<IActionResult> GetRankingCategories()
+    {
+        var response = await _pointService.GetRankingCategoriesAsync();
         return Ok(response);
     }
 
@@ -59,6 +70,49 @@ public class PointController : ControllerBase
     {
         var response = await _pointService.GetRankingEventAsync(eventType);
         return Ok(response);
+    }
+
+    [HttpGet]
+    [Route("RankingEventHistory")]
+    public async Task<IActionResult> GetRankingEventHistory(
+        [FromQuery] int? eventType,
+        [FromQuery] int limit = 20,
+        [FromQuery] int offset = 0)
+    {
+        var response = await _pointService.GetRankingEventHistoryAsync(eventType, limit, offset);
+        return Ok(response);
+    }
+
+    [HttpGet]
+    [Route("RankingEvent/{id:int}")]
+    public async Task<IActionResult> GetRankingEventById(int id)
+    {
+        var response = await _pointService.GetRankingEventByIdAsync(id);
+        return response.Success ? Ok(response) : NotFound(response);
+    }
+
+    [HttpPost]
+    [Route("RankingEvent")]
+    public async Task<IActionResult> CreateRankingEvent([FromBody] RankingEventUpsertDTO request)
+    {
+        var response = await _pointService.CreateRankingEventAsync(request);
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
+
+    [HttpPut]
+    [Route("RankingEvent/{id:int}")]
+    public async Task<IActionResult> UpdateRankingEvent(int id, [FromBody] RankingEventUpsertDTO request)
+    {
+        var response = await _pointService.UpdateRankingEventAsync(id, request);
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
+
+    [HttpDelete]
+    [Route("RankingEvent/{id:int}")]
+    public async Task<IActionResult> DeleteRankingEvent(int id)
+    {
+        var response = await _pointService.DeleteRankingEventAsync(id);
+        return response.Success ? Ok(response) : NotFound(response);
     }
 
     [HttpPost]
