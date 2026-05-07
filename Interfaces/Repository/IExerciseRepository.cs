@@ -30,4 +30,5 @@ public interface IExerciseRepository
     Task<List<Exercise>> GetExercisesByClassRoomIdsAsync(List<int> classRoomIds);
     Task<List<ExerciseAnsweredByCategoryDTO>> GetExercisesAnsweredByCategoryForUserAsync(int userId);
     Task<CategoryNoticeDTO?> GetCategoryNoticeAsync(int totalAnswered, int totalCorrect);
+    Task<List<MaterialsReferenceExercisesDTO>> GetMaterialsReferenceForExerciseAsync(int exerciseId);
 }

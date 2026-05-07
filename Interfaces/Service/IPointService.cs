@@ -19,4 +19,5 @@ public interface IPointService
     Task<CustomResponse<bool>> DeleteRankingEventAsync(int id);
     Task<CustomResponse<ExercisePointAwardResult>> AddPointsForUserAsync(AddPointsDTO redeemPoints);
     Task<CustomResponse<bool>> ScheduleRankingEventAsync(int eventId);
+    Task<CustomResponse<IEnumerable<GroupedHistoryRankingDTO>>> GetHistoryRankingAsync(int? eventType, int limit, int offset);
 }

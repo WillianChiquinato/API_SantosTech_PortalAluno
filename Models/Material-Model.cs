@@ -18,11 +18,11 @@ public class Material
     [Column("id")]
     public int Id { get; set; }
 
-    [Column("class_id")]
-    public int ClassId { get; set; }
+    [Column("course_id")]
+    public int CourseId { get; set; }
 
     [Column("title")]
-    public string? Title { get; set; }
+    public string Title { get; set; }
 
     [Column("description")]
     public string? Description { get; set; }
@@ -40,6 +40,6 @@ public class Material
     public DateTime UploadedAt { get; set; }
 
     // 🔗 Relacionamento
-    [ForeignKey(nameof(ClassId))]
-    public Class? Class { get; set; }
+    [ForeignKey(nameof(CourseId))]
+    public Course? Course { get; set; }
 }

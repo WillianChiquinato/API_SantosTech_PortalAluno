@@ -3,6 +3,7 @@ using System;
 using API_PortalSantosTech.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace API_PortalSantosTech.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260507145645_referenceMaterialToExercise")]
+    partial class referenceMaterialToExercise
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -821,7 +824,6 @@ namespace API_PortalSantosTech.Data.Migrations
                         .HasColumnName("file_url");
 
                     b.Property<string>("Title")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("title");
 
@@ -867,10 +869,6 @@ namespace API_PortalSantosTech.Data.Migrations
                         .HasColumnName("reference_description");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ExerciseId");
-
-                    b.HasIndex("MaterialId");
 
                     b.ToTable("materials_reference_exercises");
                 });
@@ -2095,25 +2093,6 @@ namespace API_PortalSantosTech.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Course");
-                });
-
-            modelBuilder.Entity("API_PortalSantosTech.Models.MaterialsReferenceExercises", b =>
-                {
-                    b.HasOne("API_PortalSantosTech.Models.Exercise", "Exercise")
-                        .WithMany()
-                        .HasForeignKey("ExerciseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("API_PortalSantosTech.Models.Material", "Material")
-                        .WithMany()
-                        .HasForeignKey("MaterialId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Exercise");
-
-                    b.Navigation("Material");
                 });
 
             modelBuilder.Entity("API_PortalSantosTech.Models.MembersChallenger", b =>

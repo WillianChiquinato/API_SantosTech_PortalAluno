@@ -79,3 +79,10 @@ public class CategoryNoticeDTO
 {
     public string Notice { get; set; } = string.Empty;
 }
+
+public class MaterialsReferenceExercisesDTO
+{
+    public int Id { get; set; }
+    public string? MaterialTitle { get; set; }
+    public string? MaterialDescription { get; set; }
+}

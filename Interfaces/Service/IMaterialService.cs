@@ -5,6 +5,6 @@ namespace API_PortalSantosTech.Interfaces;
 
 public interface IMaterialService
 {
-    Task<CustomResponse<IEnumerable<Material>>> GetAllAsync();
+    Task<CustomResponse<IEnumerable<Material>>> GetAllAsync(int enrollmentId);
     Task<CustomResponse<Material>> GetByIdAsync(int id);
 }

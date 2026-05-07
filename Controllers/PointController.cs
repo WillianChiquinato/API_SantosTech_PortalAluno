@@ -136,4 +136,12 @@ public class PointController : ControllerBase
 
         return Ok(response);
     }
+
+    [HttpGet]
+    [Route("GetHistoryRanking")]
+    public async Task<IActionResult> GetHistoryRanking([FromQuery] int? eventType, [FromQuery] int limit = 20, [FromQuery] int offset = 0)
+    {
+        var response = await _pointService.GetHistoryRankingAsync(eventType, limit, offset);
+        return Ok(response);
+    }
 }

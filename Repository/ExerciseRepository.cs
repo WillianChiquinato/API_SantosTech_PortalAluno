@@ -731,4 +731,19 @@ public class ExerciseRepository : IExerciseRepository
             _ => null,
         };
     }
+
+    public async Task<List<MaterialsReferenceExercisesDTO>> GetMaterialsReferenceForExerciseAsync(int exerciseId)
+    {
+        var materials = await _efDbContext.MaterialsReferenceExercises
+            .Where(m => m.ExerciseId == exerciseId)
+            .Select(m => new MaterialsReferenceExercisesDTO
+            {
+                Id = m.Id,
+                MaterialTitle = m.Material!.Title,
+                MaterialDescription = m.ReferenceDescription
+            })
+            .ToListAsync();
+
+        return materials;
+    }
 }

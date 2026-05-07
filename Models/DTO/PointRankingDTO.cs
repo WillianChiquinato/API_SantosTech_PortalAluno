@@ -103,3 +103,40 @@ public class RankingEventHistoryDTO
     public int RankingPosition { get; set; }
     public DateTime RecordedAt { get; set; }
 }
+
+public class HistoryRankingDTO
+{
+    public int EventId { get; set; }
+    public string EventName { get; set; } = string.Empty;
+    public string EventType { get; set; } = string.Empty;
+    public int UserId { get; set; }
+    public string UserName { get; set; } = string.Empty;
+    public string? UserProfilePictureUrl { get; set; }
+    public int AwardId { get; set; }
+    public string AwardName { get; set; } = string.Empty;
+    public string AwardDescription { get; set; } = string.Empty;
+    public string AwardPictureUrl { get; set; } = string.Empty;
+    public int RankingPosition { get; set; }
+    public DateTime RecordedAt { get; set; }
+}
+
+public class GroupedHistoryRankingDTO
+{
+    public int EventId { get; set; }
+    public string EventName { get; set; } = string.Empty;
+    public string EventType { get; set; } = string.Empty;
+    public DateTime RecordedAt { get; set; }
+    public List<HistoryRankingWinnerDTO> Winners { get; set; } = new List<HistoryRankingWinnerDTO>();
+}
+
+public class HistoryRankingWinnerDTO
+{
+    public int UserId { get; set; }
+    public string UserName { get; set; } = string.Empty;
+    public string? UserProfilePictureUrl { get; set; }
+    public int AwardId { get; set; }
+    public string AwardName { get; set; } = string.Empty;
+    public string AwardDescription { get; set; } = string.Empty;
+    public string AwardPictureUrl { get; set; } = string.Empty;
+    public int RankingPosition { get; set; }
+}

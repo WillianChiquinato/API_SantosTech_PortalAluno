@@ -198,4 +198,18 @@ public class ExerciseService : IExerciseService
             return CustomResponse<IEnumerable<ExerciseAnsweredByCategoryDTO>>.Fail("Ocorreu um erro ao buscar os exercícios respondidos por categoria para o usuário especificado");
         }
     }
+
+    public async Task<CustomResponse<IEnumerable<MaterialsReferenceExercisesDTO>>> GetMaterialsReferenceForExerciseAsync(int exerciseId)
+    {
+        try
+        {
+            var result = await _exerciseRepository.GetMaterialsReferenceForExerciseAsync(exerciseId);
+            return CustomResponse<IEnumerable<MaterialsReferenceExercisesDTO>>.SuccessTrade(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar materiais de referência para o exercício {ExerciseId}", exerciseId);
+            return CustomResponse<IEnumerable<MaterialsReferenceExercisesDTO>>.Fail("Ocorreu um erro ao buscar os materiais de referência para o exercício especificado");
+        }
+    }
 }

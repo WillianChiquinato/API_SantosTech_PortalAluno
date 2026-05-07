@@ -54,6 +54,14 @@ public class ExerciseController : ControllerBase
         return response.Success ? Ok(response) : NotFound(response);
     }
 
+    [HttpGet]
+    [Route("GetMaterialsReferenceForExercise")]
+    public async Task<IActionResult> GetMaterialsReferenceForExercise([FromQuery] int exerciseId)
+    {
+        var response = await _exerciseService.GetMaterialsReferenceForExerciseAsync(exerciseId);
+        return response.Success ? Ok(response) : NotFound(response);
+    }
+
     [HttpPost]
     [Route("SubmitExerciseAnswers")]
     public async Task<IActionResult> SubmitExerciseAnswers([FromBody] List<ExerciseSubmissionDTO> submission)

@@ -14,4 +14,5 @@ public interface IExerciseService
     Task<CustomResponse<int>> SyncMainExercisesIntoPhaseFlowsAsync(int phaseId);
     Task<CustomResponse<VerifyDTO>> VerifyExistingAnswersAsync(int exerciseId, int userId);
     Task<CustomResponse<IEnumerable<ExerciseAnsweredByCategoryDTO>>> GetExercisesAnsweredByCategoryForUserAsync(int userId);
+    Task<CustomResponse<IEnumerable<MaterialsReferenceExercisesDTO>>> GetMaterialsReferenceForExerciseAsync(int exerciseId);
 }

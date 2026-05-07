@@ -15,10 +15,10 @@ public class MaterialController : ControllerBase
     }
 
     [HttpGet]
-    [Route("GetAllMaterials")]
-    public async Task<IActionResult> GetAll()
+    [Route("GetAllMaterialsByCourse")]
+    public async Task<IActionResult> GetAll([FromQuery] int userEnrollment)
     {
-        var response = await _materialService.GetAllAsync();
+        var response = await _materialService.GetAllAsync(userEnrollment);
         return Ok(response);
     }
 

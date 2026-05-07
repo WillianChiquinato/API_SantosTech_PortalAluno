@@ -297,4 +297,26 @@ public class PointService : IPointService
 
         return null;
     }
+
+    public async Task<CustomResponse<IEnumerable<GroupedHistoryRankingDTO>>> GetHistoryRankingAsync(int? eventType, int limit, int offset)
+    {
+        try
+        {
+            if (eventType.HasValue && !Enum.IsDefined(typeof(EventType), eventType.Value))
+                return CustomResponse<IEnumerable<GroupedHistoryRankingDTO>>.Fail("Tipo do evento inválido.");
+
+            var normalizedLimit = Math.Clamp(limit, 1, 100);
+            var normalizedOffset = Math.Max(offset, 0);
+            var (items, totalRows) = await _pointRepository.GetHistoryRankingAsync(
+                eventType,
+                normalizedLimit,
+                normalizedOffset);
+            return CustomResponse<IEnumerable<GroupedHistoryRankingDTO>>.SuccessTrade(items, totalRows);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar histórico de ranking");
+            return CustomResponse<IEnumerable<GroupedHistoryRankingDTO>>.Fail("Erro ao buscar histórico de ranking");
+        }
+    }
 }

@@ -504,4 +504,73 @@ public class PointRepository : IPointRepository
             _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
         };
     }
+
+    public async Task<(List<GroupedHistoryRankingDTO> Items, int TotalRows)> GetHistoryRankingAsync(int? eventType, int limit, int offset)
+    {
+        var query = _efDbContext.RankingHistories
+            .AsNoTracking()
+            .Include(h => h.Event)
+            .Include(h => h.Award)
+            .Include(h => h.User)
+            .AsQueryable();
+
+        if (eventType.HasValue)
+            query = query.Where(h => h.Event.EventType == (EventType)eventType.Value);
+
+        var totalRows = await query
+            .Select(h => h.EventId)
+            .Distinct()
+            .CountAsync();
+
+        var items = await query
+            .OrderByDescending(h => h.RecordedAt)
+            .ThenBy(h => h.RankingPosition)
+            .Select(h => new HistoryRankingDTO
+            {
+                EventId = h.EventId,
+                EventName = h.Event.EventName,
+                EventType = h.Event.EventType.ToString(),
+                UserId = h.UserId,
+                UserName = !string.IsNullOrWhiteSpace(h.User.Name)
+                    ? h.User.Name
+                    : $"Aluno {h.UserId}",
+                UserProfilePictureUrl = h.User.ProfilePictureUrl,
+                AwardId = h.AwardId,
+                AwardName = h.Award.AwardName,
+                AwardDescription = h.Award.AwardDescription,
+                AwardPictureUrl = h.Award.AwardPictureUrl,
+                RankingPosition = h.RankingPosition,
+                RecordedAt = h.RecordedAt
+            })
+            .ToListAsync();
+
+        var grouped = items
+            .GroupBy(h => h.EventId)
+            .Skip(offset)
+            .Take(limit)
+            .Select(g => new GroupedHistoryRankingDTO
+            {
+                EventId = g.Key,
+                EventName = g.First().EventName,
+                EventType = g.First().EventType,
+                RecordedAt = g.First().RecordedAt,
+                Winners = g
+                    .OrderBy(h => h.RankingPosition)
+                    .Select(h => new HistoryRankingWinnerDTO
+                    {
+                        UserId = h.UserId,
+                        UserName = h.UserName,
+                        UserProfilePictureUrl = h.UserProfilePictureUrl,
+                        AwardId = h.AwardId,
+                        AwardName = h.AwardName,
+                        AwardDescription = h.AwardDescription,
+                        AwardPictureUrl = h.AwardPictureUrl,
+                        RankingPosition = h.RankingPosition
+                    })
+                    .ToList()
+            })
+            .ToList();
+
+        return (grouped, totalRows);
+    }
 }

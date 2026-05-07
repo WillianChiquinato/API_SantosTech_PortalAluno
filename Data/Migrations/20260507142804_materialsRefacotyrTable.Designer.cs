@@ -3,6 +3,7 @@ using System;
 using API_PortalSantosTech.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace API_PortalSantosTech.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260507142804_materialsRefacotyrTable")]
+    partial class materialsRefacotyrTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -821,7 +824,6 @@ namespace API_PortalSantosTech.Data.Migrations
                         .HasColumnName("file_url");
 
                     b.Property<string>("Title")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("title");
 
@@ -838,41 +840,6 @@ namespace API_PortalSantosTech.Data.Migrations
                     b.HasIndex("CourseId");
 
                     b.ToTable("material");
-                });
-
-            modelBuilder.Entity("API_PortalSantosTech.Models.MaterialsReferenceExercises", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<int>("ExerciseId")
-                        .HasColumnType("integer")
-                        .HasColumnName("exercise_id");
-
-                    b.Property<int>("MaterialId")
-                        .HasColumnType("integer")
-                        .HasColumnName("material_id");
-
-                    b.Property<string>("ReferenceDescription")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("reference_description");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExerciseId");
-
-                    b.HasIndex("MaterialId");
-
-                    b.ToTable("materials_reference_exercises");
                 });
 
             modelBuilder.Entity("API_PortalSantosTech.Models.MembersChallenger", b =>
@@ -2095,25 +2062,6 @@ namespace API_PortalSantosTech.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Course");
-                });
-
-            modelBuilder.Entity("API_PortalSantosTech.Models.MaterialsReferenceExercises", b =>
-                {
-                    b.HasOne("API_PortalSantosTech.Models.Exercise", "Exercise")
-                        .WithMany()
-                        .HasForeignKey("ExerciseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("API_PortalSantosTech.Models.Material", "Material")
-                        .WithMany()
-                        .HasForeignKey("MaterialId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Exercise");
-
-                    b.Navigation("Material");
                 });
 
             modelBuilder.Entity("API_PortalSantosTech.Models.MembersChallenger", b =>

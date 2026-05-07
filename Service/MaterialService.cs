@@ -16,9 +16,9 @@ public class MaterialService : IMaterialService
         _materialRepository = materialRepository;
     }
 
-    public async Task<CustomResponse<IEnumerable<Material>>> GetAllAsync()
+    public async Task<CustomResponse<IEnumerable<Material>>> GetAllAsync(int enrollmentId)
     {
-        var result = await _materialRepository.GetAllAsync();
+        var result = await _materialRepository.GetAllAsync(enrollmentId);
         return CustomResponse<IEnumerable<Material>>.SuccessTrade(result);
     }
 

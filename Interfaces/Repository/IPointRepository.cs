@@ -20,4 +20,5 @@ public interface IPointRepository
     Task UpdateRankingEventScheduledJobIdAsync(int eventId, string? scheduledJobId);
     Task<ExercisePointAwardResult> AddPointsForUserAsync(int userId, int exerciseId);
     Task<Point> AddPointsAsync(Point point);
+    Task<(List<GroupedHistoryRankingDTO> Items, int TotalRows)> GetHistoryRankingAsync(int? eventType, int limit, int offset);
 }

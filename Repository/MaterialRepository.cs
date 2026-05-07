@@ -14,9 +14,13 @@ public class MaterialRepository : IMaterialRepository
         _efDbContext = efDbContext;
     }
 
-    public async Task<List<Material>> GetAllAsync()
+    public async Task<List<Material>> GetAllAsync(int enrollmentId)
     {
-        return await _efDbContext.Materials.AsNoTracking().ToListAsync();
+        var courseByEnrollment = await _efDbContext.Enrollments
+            .Include(e => e.Class)
+            .FirstOrDefaultAsync(e => e.Id == enrollmentId);
+
+        return await _efDbContext.Materials.AsNoTracking().Where(x => x.CourseId == courseByEnrollment!.Class!.CourseId).ToListAsync();
     }
 
     public async Task<Material?> GetByIdAsync(int id)
