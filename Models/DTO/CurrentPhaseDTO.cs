@@ -13,4 +13,5 @@ public class CurrentModuleDTO
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public int TotalPhases { get; set; }
+    public ClassDTO? Class { get; set; }
 }

@@ -23,6 +23,12 @@ public class TeamsChallenger
     [Column("description")]
     public string Description { get; set; } = null!;
 
+    [Column("clan_color")]
+    public string ClanColor { get; set; } = null!;
+
+    [Column("boat_name")]
+    public string BoatName { get; set; } = null!;
+
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }
 

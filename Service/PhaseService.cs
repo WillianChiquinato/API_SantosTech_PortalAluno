@@ -66,7 +66,12 @@ public class PhaseService : IPhaseService
                 Id = GetClassInUser?.CurrentModuleId ?? 0,
                 Name = currentModuleClass?.Name ?? "No current module",
                 Description = currentModuleClass?.Description ?? "No description available",
-                TotalPhases = totalPhasesPerModule
+                TotalPhases = totalPhasesPerModule,
+                Class = GetClassInUser == null ? null : new ClassDTO
+                {
+                    Id = GetClassInUser.Id,
+                    Name = GetClassInUser.Name
+                }
             };
             return CustomResponse<CurrentModuleDTO>.SuccessTrade(phaseUserDto, totalRows: totalPhasesPerModule);
         }

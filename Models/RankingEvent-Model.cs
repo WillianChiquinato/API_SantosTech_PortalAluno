@@ -7,7 +7,7 @@ public enum EventType
 {
     Notas = 1,
     Pontos = 2,
-    Outro = 3
+    DesafioFinal = 3
 }
 
 [Table("ranking_events")]

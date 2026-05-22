@@ -37,6 +37,7 @@ public class AppDbContext : DbContext
     public DbSet<Question> Questions { get; set; }
     public DbSet<QuestionOption> QuestionOptions { get; set; }
     public DbSet<TeamsChallenger> TeamsChallengers { get; set; }
+    public DbSet<TeamUsersChallenger> TeamUsersChallengers { get; set; }
     public DbSet<User> Users { get; set; }
     public DbSet<UserIdentity> UserIdentities { get; set; }
     public DbSet<Video> Videos { get; set; }
@@ -53,4 +54,9 @@ public class AppDbContext : DbContext
     public DbSet<RankingEvent> RankingEvents { get; set; }
     public DbSet<RankingAward> RankingAwards { get; set; }
     public DbSet<RankingHistory> RankingHistories { get; set; }
+    public DbSet<FinalChallengeEventRecord> FinalChallengeEvents { get; set; }
+    public DbSet<FinalChallengeClanRecord> FinalChallengeClans { get; set; }
+    public DbSet<FinalChallengeTaskRecord> FinalChallengeTasks { get; set; }
+    public DbSet<FinalChallengeSubmissionRecord> FinalChallengeSubmissions { get; set; }
+    public DbSet<FinalChallengeActivityRecord> FinalChallengeActivities { get; set; }
 }

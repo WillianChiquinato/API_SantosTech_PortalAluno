@@ -44,7 +44,6 @@ public class UserController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin")] // [SEC] only admins can view all users
     [Route("GetAllUsers")]
     public async Task<IActionResult> GetAll()
     {

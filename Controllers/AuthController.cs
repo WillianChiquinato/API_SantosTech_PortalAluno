@@ -236,7 +236,7 @@ public class AuthController : ControllerBase
     {
         _tokenService.DeleteAuthCookie(Response, Request.IsHttps);
 
-        return Ok(new
+        return Ok(new   
         {
             success = true,
             errors = Array.Empty<string>(),

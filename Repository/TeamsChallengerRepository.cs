@@ -1,6 +1,8 @@
 using API_PortalSantosTech.Data;
 using API_PortalSantosTech.Interfaces.Repository;
 using API_PortalSantosTech.Models;
+using API_PortalSantosTech.Models.DTO;
+using API_PortalSantosTech.Response;
 using Microsoft.EntityFrameworkCore;
 
 namespace API_PortalSantosTech.Repository;
@@ -14,13 +16,59 @@ public class TeamsChallengerRepository : ITeamsChallengerRepository
         _efDbContext = efDbContext;
     }
 
-    public async Task<List<TeamsChallenger>> GetAllAsync()
+    public async Task<CreateTeamRequest> CreateTeamAsync(CreateTeamRequest createTeamRequest, int userId)
     {
-        return await _efDbContext.TeamsChallengers.AsNoTracking().ToListAsync();
+        var team = new TeamsChallenger
+        {
+            Name = createTeamRequest.Name,
+            Description = createTeamRequest.Description,
+            ClassId = createTeamRequest.ClassId,
+            ModuleId = createTeamRequest.ModuleId,
+            ClanColor = createTeamRequest.ClanColor,
+            BoatName = createTeamRequest.BoatName,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _efDbContext.TeamsChallengers.Add(team);
+        await _efDbContext.SaveChangesAsync();
+
+        var teamUser = new TeamUsersChallenger
+        {
+            TeamId = team.Id,
+            UserId = userId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _efDbContext.TeamUsersChallengers.Add(teamUser);
+        await _efDbContext.SaveChangesAsync();
+
+        return new CreateTeamRequest
+        {
+            ClassId = team.ClassId,
+            ModuleId = team.ModuleId,
+            Name = team.Name,
+            Description = team.Description,
+            ClanColor = team.ClanColor,
+            BoatName = team.BoatName,
+            UserIds = createTeamRequest.UserIds
+        };
     }
 
-    public async Task<TeamsChallenger?> GetByIdAsync(int id)
+    public async Task<TeamsChallenger?> GetTeamForPlayerRelationshipAsync(int classId, int moduleId, int userId)
     {
-        return await _efDbContext.TeamsChallengers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+        var teams = await _efDbContext.TeamsChallengers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.ClassId == classId && x.ModuleId == moduleId);
+
+        return teams;
+    }
+
+    public async Task<List<TeamUsersChallenger>> GetUsersOfTeamAsync(int teamId)
+    {
+        return await _efDbContext.TeamUsersChallengers
+            .AsNoTracking()
+            .Include(x => x.User)
+            .Where(x => x.TeamId == teamId)
+            .ToListAsync();
     }
 }

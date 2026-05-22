@@ -3,6 +3,7 @@ using System;
 using API_PortalSantosTech.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace API_PortalSantosTech.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260519195834_FinalChallengeTables")]
+    partial class FinalChallengeTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1918,36 +1921,6 @@ namespace API_PortalSantosTech.Data.Migrations
                     b.ToTable("refresh_tokens");
                 });
 
-            modelBuilder.Entity("API_PortalSantosTech.Models.TeamUsersChallenger", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<int>("TeamId")
-                        .HasColumnType("integer")
-                        .HasColumnName("team_id");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TeamId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("teams_users_challenger");
-                });
-
             modelBuilder.Entity("API_PortalSantosTech.Models.TeamsChallenger", b =>
                 {
                     b.Property<int>("Id")
@@ -1956,16 +1929,6 @@ namespace API_PortalSantosTech.Data.Migrations
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("BoatName")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("boat_name");
-
-                    b.Property<string>("ClanColor")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("clan_color");
 
                     b.Property<int>("ClassId")
                         .HasColumnType("integer")
@@ -2806,25 +2769,6 @@ namespace API_PortalSantosTech.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("API_PortalSantosTech.Models.TeamUsersChallenger", b =>
-                {
-                    b.HasOne("API_PortalSantosTech.Models.TeamsChallenger", "Team")
-                        .WithMany()
-                        .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("API_PortalSantosTech.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Team");
 
                     b.Navigation("User");
                 });

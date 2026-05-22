@@ -1,6 +1,7 @@
 using API_PortalSantosTech.Data;
 using API_PortalSantosTech.DependencyInjection;
 using API_PortalSantosTech.Filters;
+using API_PortalSantosTech.Hubs;
 using Amazon.S3;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
@@ -45,6 +46,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
@@ -132,6 +134,8 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 
 builder.Services.AddProjectDependencies();
+builder.Services.AddSingleton<IFinalChallengeRealtimeNotifier, FinalChallengeRealtimeNotifier>();
+builder.Services.AddHostedService<FinalChallengeRealtimeWorker>();
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<IAmazonS3>(_ =>
 {
@@ -175,6 +179,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 if (!string.IsNullOrWhiteSpace(context.Token))
                     return Task.CompletedTask;
 
+                var accessToken = context.Request.Query["access_token"].ToString();
+                var isFinalChallengeHub = context.HttpContext.Request.Path.StartsWithSegments(FinalChallengeHub.HubRoute);
+                if (isFinalChallengeHub && !string.IsNullOrWhiteSpace(accessToken))
+                {
+                    context.Token = accessToken;
+                    return Task.CompletedTask;
+                }
+
                 if (context.Request.Cookies.TryGetValue(TokenService.AuthCookieName, out var cookieToken))
                 {
                     context.Token = cookieToken;
@@ -216,6 +228,7 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 HangfireJobs.Register();
 
 app.MapControllers();
+app.MapHub<FinalChallengeHub>(FinalChallengeHub.HubRoute);
 
 static IResult ApiHealthResponse() => Results.Ok("API Running");
 
