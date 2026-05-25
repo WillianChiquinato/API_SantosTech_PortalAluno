@@ -141,7 +141,7 @@ public sealed class ChallengeContext
     public int ModuleId { get; init; }
     public FinalChallengeEventWindow? EventWindow { get; init; }
     public List<TeamsChallenger> Teams { get; init; } = new();
-    public List<MembersChallenger> Members { get; init; } = new();
+    public List<TeamUsersChallenger> Members { get; init; } = new();
     public List<Exercise> Exercises { get; init; } = new();
     public List<Question> Questions { get; init; } = new();
     public List<Answer> Answers { get; init; } = new();
@@ -155,7 +155,7 @@ public sealed class ChallengeContext
 public sealed class TeamMetric
 {
     public required TeamsChallenger Team { get; init; }
-    public List<MembersChallenger> Members { get; init; } = new();
+    public List<TeamUsersChallenger> Members { get; init; } = new();
     public List<Answer> Answers { get; init; } = new();
     public List<ProgressExerciseStudent> Progresses { get; init; } = new();
     public List<FinalModuleSubmission> Submissions { get; init; } = new();
@@ -186,4 +186,22 @@ public class TeamsClanMemberDTO
     public string UserEmail { get; set; } = string.Empty;
     public string? UserAvatarUrl { get; set; }
     public bool IsCurrentUser { get; set; }
+}
+
+public class RankingFinalChallengeDTO
+{
+    public int ClanId { get; set; }
+    public string ClanName { get; set; } = string.Empty;
+    public string Motto { get; set; } = string.Empty;
+    public string Color { get; set; } = string.Empty;
+    public string BoatName { get; set; } = string.Empty;
+    public int MembersCount { get; set; }
+    public int SolvedCount { get; set; }
+    public double TotalScore { get; set; }
+    public double AverageAiScore { get; set; }
+    public double AverageResolutionSeconds { get; set; }
+    public double ProgressPercent { get; set; }
+    public double DistanceToFinishPercent { get; set; }
+    public string CurrentCheckpoint { get; set; } = string.Empty;
+    public int Rank { get; set; }
 }

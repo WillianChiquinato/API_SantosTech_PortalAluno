@@ -9,4 +9,6 @@ public interface ITeamsChallengerRepository
     Task<TeamsChallenger?> GetTeamForPlayerRelationshipAsync(int classId, int moduleId, int userId);
     Task<List<TeamUsersChallenger>> GetUsersOfTeamAsync(int teamId);
     Task<CreateTeamRequest> CreateTeamAsync(CreateTeamRequest createTeamRequest, int userId);
+    Task<List<RankingFinalChallengeDTO>> GetRankingToFinalChallengeAsync(int eventId);
+    Task<FinalChallengeEventRecord?> GetCurrentActivityEventAsync(int userId);
 }

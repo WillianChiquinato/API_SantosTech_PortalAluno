@@ -126,29 +126,48 @@ public class TeamsChallengerService : ITeamsChallengerService
 
     private async Task<ChallengeContext> BuildChallengeContextAsync(int eventId, int? currentUserId)
     {
-        var rankingEvent = await _dbContext.RankingEvents
+        var finalChallengeEvent = await _dbContext.FinalChallengeEvents
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == eventId);
-
-        var teams = await _dbContext.TeamsChallengers
-            .AsNoTracking()
-            .Where(x => x.ModuleId == eventId)
+            .Include(x => x.RankingEvent)
             .Include(x => x.Module)
             .Include(x => x.Class)
-            .OrderBy(x => x.Name)
+            .FirstOrDefaultAsync(x => x.Id == eventId);
+
+        if (finalChallengeEvent is null)
+        {
+            return new ChallengeContext
+            {
+                Error = "Evento do desafio final não encontrado."
+            };
+        }
+
+        var clanRecords = await _dbContext.FinalChallengeClans
+            .AsNoTracking()
+            .Where(x => x.EventId == eventId)
             .ToListAsync();
 
-        var moduleId = teams.FirstOrDefault()?.ModuleId ?? eventId;
-        if (teams.Count == 0)
-        {
-            teams = await _dbContext.TeamsChallengers
-                .AsNoTracking()
-                .Where(x => x.ModuleId == moduleId)
-                .Include(x => x.Module)
-                .Include(x => x.Class)
+        var eventTeamIds = clanRecords
+            .Where(x => x.TeamId.HasValue)
+            .Select(x => x.TeamId!.Value)
+            .Distinct()
+            .ToList();
+
+        var teamsQuery = _dbContext.TeamsChallengers
+            .AsNoTracking()
+            .Include(x => x.Module)
+            .Include(x => x.Class);
+
+        var teams = eventTeamIds.Count > 0
+            ? await teamsQuery
+                .Where(x => eventTeamIds.Contains(x.Id))
+                .OrderBy(x => x.Name)
+                .ToListAsync()
+            : await teamsQuery
+                .Where(x => x.ModuleId == finalChallengeEvent.ModuleId && x.ClassId == finalChallengeEvent.ClassId)
                 .OrderBy(x => x.Name)
                 .ToListAsync();
-        }
+
+        var moduleId = finalChallengeEvent.ModuleId;
 
         if (teams.Count == 0)
         {
@@ -160,7 +179,7 @@ public class TeamsChallengerService : ITeamsChallengerService
 
         var teamIds = teams.Select(x => x.Id).ToList();
 
-        var members = await _dbContext.MembersChallengers
+        var members = await _dbContext.TeamUsersChallengers
             .AsNoTracking()
             .Where(x => teamIds.Contains(x.TeamId))
             .Include(x => x.User)
@@ -214,7 +233,7 @@ public class TeamsChallengerService : ITeamsChallengerService
             ? null
             : members.FirstOrDefault(x => x.UserId == currentUserId.Value)?.TeamId;
 
-        var eventWindow = BuildEventWindow(eventId, rankingEvent, teams.First(), moduleId);
+        var eventWindow = BuildEventWindow(finalChallengeEvent, teams.FirstOrDefault());
         var teamMetrics = BuildTeamMetrics(teams, members, exercises, answers, progresses, submissions, eventWindow.StartsAt, currentUserClanId);
         var clans = BuildClans(teamMetrics, exercises.Count);
 
@@ -236,38 +255,38 @@ public class TeamsChallengerService : ITeamsChallengerService
         };
     }
 
-    private static FinalChallengeEventWindow BuildEventWindow(int eventId, RankingEvent? rankingEvent, TeamsChallenger fallbackTeam, int moduleId)
+    private static FinalChallengeEventWindow BuildEventWindow(FinalChallengeEventRecord challengeEvent, TeamsChallenger? fallbackTeam)
     {
         var now = DateTime.UtcNow;
-        var startsAt = rankingEvent?.StartTime.ToUniversalTime() ?? now;
-        var endsAt = rankingEvent is null
-            ? now.AddHours(2)
-            : startsAt.AddMinutes(rankingEvent.DurationMinutes);
+        var startsAt = challengeEvent.StartsAt.ToUniversalTime();
+        var endsAt = challengeEvent.EndsAt.ToUniversalTime();
 
-        var status = now < startsAt
-            ? "scheduled"
-            : now <= endsAt
-                ? "active"
-                : "closed";
+        var status = string.IsNullOrWhiteSpace(challengeEvent.Status)
+            ? now < startsAt
+                ? "scheduled"
+                : now <= endsAt
+                    ? "active"
+                    : "closed"
+            : challengeEvent.Status;
 
         return new FinalChallengeEventWindow
         {
-            EventId = eventId,
-            Title = rankingEvent?.EventName ?? $"Desafio final do módulo {moduleId}",
-            ModuleName = fallbackTeam.Module?.Name ?? $"Módulo {moduleId}",
-            ClassName = fallbackTeam.Class?.Name ?? "Turma não informada",
+            EventId = challengeEvent.Id,
+            Title = challengeEvent.Title,
+            ModuleName = challengeEvent.Module?.Name ?? fallbackTeam?.Module?.Name ?? $"Módulo {challengeEvent.ModuleId}",
+            ClassName = challengeEvent.Class?.Name ?? fallbackTeam?.Class?.Name ?? "Turma não informada",
             Status = status,
             StartsAt = startsAt,
             EndsAt = endsAt,
             ServerTime = now,
-            RefreshIntervalSeconds = 10,
-            UpdateMode = "polling"
+            RefreshIntervalSeconds = challengeEvent.RefreshIntervalSeconds,
+            UpdateMode = string.IsNullOrWhiteSpace(challengeEvent.UpdateMode) ? "polling" : challengeEvent.UpdateMode
         };
     }
 
     private static Dictionary<int, TeamMetric> BuildTeamMetrics(
         List<TeamsChallenger> teams,
-        List<MembersChallenger> members,
+        List<TeamUsersChallenger> members,
         List<Exercise> exercises,
         List<Answer> answers,
         List<ProgressExerciseStudent> progresses,
@@ -415,7 +434,7 @@ public class TeamsChallengerService : ITeamsChallengerService
                 ChallengeId = exercise.Id,
                 Title = exercise.Title ?? $"Desafio {exercise.Id}",
                 Category = exercise.Category?.Name ?? "Sem categoria",
-                Briefing = context.Questions.FirstOrDefault(x => x.ExerciseId == exercise.Id)?.Statement ?? exercise.Description,
+                Briefing = exercise.Description + " - " + context.Questions.FirstOrDefault(q => q.ExerciseId == exercise.Id)?.Statement,
                 Difficulty = MapDifficulty(exercise.Difficulty),
                 Status = status,
                 ScoreWeight = exercise.PointsRedeem,
@@ -540,5 +559,31 @@ public class TeamsChallengerService : ITeamsChallengerService
             _logger.LogError(ex, "Erro ao criar time para o desafio final.");
             return CustomResponse<CreateTeamRequest>.Fail("Ocorreu um erro ao processar a solicitação.");
         }
+    }
+
+    public async Task<CustomResponse<IEnumerable<RankingFinalChallengeDTO>>> GetRankingToFinalChallengeAsync(int eventId, int? currentUserId)
+    {
+        var context = await _teamsChallengerRepository.GetRankingToFinalChallengeAsync(eventId);
+        if (context is null)
+            return CustomResponse<IEnumerable<RankingFinalChallengeDTO>>.Fail("Nenhum ranking encontrado.");
+
+        return CustomResponse<IEnumerable<RankingFinalChallengeDTO>>.SuccessTrade(context);
+    }
+
+    public async Task<CustomResponse<FinalChallengeEventRecord>> GetActivityEventAsync(int? currentUserId)
+    {
+        var currentEvent = await _teamsChallengerRepository.GetCurrentActivityEventAsync(currentUserId ?? 0);
+        if (currentEvent is null)
+            return CustomResponse<FinalChallengeEventRecord>.Fail("Nenhum evento ativo encontrado.");
+
+        return CustomResponse<FinalChallengeEventRecord>.SuccessTrade(new FinalChallengeEventRecord
+        {
+            Id = currentEvent.Id,
+            Title = currentEvent.Title,
+            RefreshIntervalSeconds = currentEvent.RefreshIntervalSeconds,
+            Status = currentEvent.Status,
+            StartsAt = currentEvent.StartsAt,
+            EndsAt = currentEvent.EndsAt
+        });
     }
 }

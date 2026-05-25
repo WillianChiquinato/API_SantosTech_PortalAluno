@@ -45,6 +45,15 @@ public class TeamsChallengerController : ControllerBase
     }
 
     [HttpGet]
+    [Route("GetActivityEvent")]
+    public async Task<IActionResult> GetActivityEvent()
+    {
+        var snapshot = await _teamsChallengerService.GetActivityEventAsync(User.GetAuthenticatedUserId());
+
+        return Ok(snapshot);
+    }
+
+    [HttpGet]
     [Route("GetActivityFeed")]
     public async Task<IActionResult> GetActivityFeed([FromQuery] int eventId)
     {
@@ -75,7 +84,15 @@ public class TeamsChallengerController : ControllerBase
     public async Task<IActionResult> JoinTeam([FromBody] CreateTeamRequest createTeamRequest)
     {
         var result = await _teamsChallengerService.CreateTeamAsync(createTeamRequest, User.GetAuthenticatedUserId());
-        
+
+        return Ok(result);
+    }
+
+    [HttpGet]
+    [Route("GetRankingToFinalChallenge")]
+    public async Task<IActionResult> GetRankingToFinalChallenge([FromQuery] int eventId)
+    {
+        var result = await _teamsChallengerService.GetRankingToFinalChallengeAsync(eventId, User.GetAuthenticatedUserId());
         return Ok(result);
     }
 }

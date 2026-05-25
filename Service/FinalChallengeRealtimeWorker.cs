@@ -53,21 +53,10 @@ public class FinalChallengeRealtimeWorker : BackgroundService
         var challengeService = scope.ServiceProvider.GetRequiredService<ITeamsChallengerService>();
         var notifier = scope.ServiceProvider.GetRequiredService<IFinalChallengeRealtimeNotifier>();
 
-        var rankingEventIds = await dbContext.RankingEvents
+        var candidateEventIds = await dbContext.FinalChallengeEvents
             .AsNoTracking()
             .Select(x => x.Id)
             .ToListAsync(cancellationToken);
-
-        var moduleEventIds = await dbContext.TeamsChallengers
-            .AsNoTracking()
-            .Select(x => x.ModuleId)
-            .Distinct()
-            .ToListAsync(cancellationToken);
-
-        var candidateEventIds = rankingEventIds
-            .Concat(moduleEventIds)
-            .Distinct()
-            .ToList();
 
         var liveEventIds = new HashSet<int>();
 

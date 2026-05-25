@@ -6,6 +6,7 @@ namespace API_PortalSantosTech.Interfaces;
 
 public interface ITeamsChallengerService
 {
+    Task<CustomResponse<FinalChallengeEventRecord>> GetActivityEventAsync(int? currentUserId);
     Task<CustomResponse<FinalChallengeSnapshot>> GetLiveSnapshotAsync(int eventId, int? currentUserId);
     Task<CustomResponse<IEnumerable<FinalChallengeClan>>> GetLeaderboardAsync(int eventId, int? currentUserId);
     Task<CustomResponse<IEnumerable<FinalChallengeTask>>> GetClanTasksAsync(int eventId, int clanId);
@@ -13,4 +14,5 @@ public interface ITeamsChallengerService
     Task<CustomResponse<FinalChallengeSubmitResult>> SubmitAnswerAsync(FinalChallengeAnswerRequest answerRequest, int? currentUserId);
     Task<CustomResponse<TeamsUserChallengerDTO>> GetTeamForPlayerRelationship(int classId, int moduleId, int? currentUserId);
     Task<CustomResponse<CreateTeamRequest>> CreateTeamAsync(CreateTeamRequest createTeamRequest, int? currentUserId);
+    Task<CustomResponse<IEnumerable<RankingFinalChallengeDTO>>> GetRankingToFinalChallengeAsync(int eventId, int? currentUserId);
 }
