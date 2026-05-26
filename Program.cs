@@ -2,6 +2,7 @@ using API_PortalSantosTech.Data;
 using API_PortalSantosTech.DependencyInjection;
 using API_PortalSantosTech.Filters;
 using API_PortalSantosTech.Hubs;
+using API_PortalSantosTech.Middlewares;
 using Amazon.S3;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
@@ -14,6 +15,7 @@ using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.HttpOverrides;
+using StackExchange.Redis;
 
 DotNetEnv.Env.Load();
 
@@ -54,6 +56,14 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 builder.Services.AddScoped<TokenService>();
+
+// Redis + Santos Tech Auth centralizado
+var redisUrl = Environment.GetEnvironmentVariable("REDIS_URL") ?? "redis://localhost:6379";
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisUrl));
+builder.Services.AddScoped<ISantosAuthCacheService, SantosAuthCacheService>();
+builder.Services.AddHttpClient("SantosAuth");
+builder.Configuration["SantosTech:JwtSecret"] = Environment.GetEnvironmentVariable("SANTOS_TECH_JWT_SECRET");
+builder.Configuration["SantosTech:ApiUrl"] = Environment.GetEnvironmentVariable("SANTOS_TECH_API_URL");
 builder.Services.AddScoped<IEmailService, SendGridEmailService>();
 builder.Services.AddScoped<ReportService>();
 builder.Services.AddHttpClient<AIService>();
@@ -161,15 +171,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
+            ValidateIssuer = false,
+            ValidateAudience = false,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ClockSkew = TimeSpan.Zero,
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])
-            )
+                Encoding.UTF8.GetBytes(
+                    builder.Configuration["SantosTech:JwtSecret"]
+                    ?? throw new InvalidOperationException("SantosTech:JwtSecret não configurado")
+                )
+            ),
         };
 
         options.Events = new JwtBearerEvents
@@ -179,6 +191,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 if (!string.IsNullOrWhiteSpace(context.Token))
                     return Task.CompletedTask;
 
+                // FinalChallengeHub uses access_token query param for WebSocket
                 var accessToken = context.Request.Query["access_token"].ToString();
                 var isFinalChallengeHub = context.HttpContext.Request.Path.StartsWithSegments(FinalChallengeHub.HubRoute);
                 if (isFinalChallengeHub && !string.IsNullOrWhiteSpace(accessToken))
@@ -187,13 +200,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     return Task.CompletedTask;
                 }
 
-                if (context.Request.Cookies.TryGetValue(TokenService.AuthCookieName, out var cookieToken))
+                // New centralized auth uses access_token cookie
+                if (context.Request.Cookies.TryGetValue("access_token", out var cookieToken))
                 {
                     context.Token = cookieToken;
                 }
 
                 return Task.CompletedTask;
-            }
+            },
         };
     });
 
@@ -219,6 +233,7 @@ app.UseRateLimiter();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<SantosAuthMiddleware>();
 
 // [SEC] Hangfire dashboard requires admin authentication
 app.UseHangfireDashboard("/hangfire", new DashboardOptions
