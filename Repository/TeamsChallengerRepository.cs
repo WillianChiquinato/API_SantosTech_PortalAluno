@@ -32,14 +32,20 @@ public class TeamsChallengerRepository : ITeamsChallengerRepository
         _efDbContext.TeamsChallengers.Add(team);
         await _efDbContext.SaveChangesAsync();
 
-        var teamUser = new TeamUsersChallenger
-        {
-            TeamId = team.Id,
-            UserId = userId,
-            CreatedAt = DateTime.UtcNow
-        };
+        var memberIds = createTeamRequest.UserIds.Count > 0
+            ? createTeamRequest.UserIds
+            : new List<int> { userId };
 
-        _efDbContext.TeamUsersChallengers.Add(teamUser);
+        foreach (var memberId in memberIds)
+        {
+            _efDbContext.TeamUsersChallengers.Add(new TeamUsersChallenger
+            {
+                TeamId = team.Id,
+                UserId = memberId,
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
+
         await _efDbContext.SaveChangesAsync();
 
         return new CreateTeamRequest
@@ -223,11 +229,12 @@ public class TeamsChallengerRepository : ITeamsChallengerRepository
 
     public async Task<TeamsChallenger?> GetTeamForPlayerRelationshipAsync(int classId, int moduleId, int userId)
     {
-        var teams = await _efDbContext.TeamsChallengers
+        return await _efDbContext.TeamsChallengers
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.ClassId == classId && x.ModuleId == moduleId);
-
-        return teams;
+            .Where(t => t.ClassId == classId && t.ModuleId == moduleId)
+            .Where(t => _efDbContext.TeamUsersChallengers
+                .Any(tu => tu.TeamId == t.Id && tu.UserId == userId))
+            .FirstOrDefaultAsync();
     }
 
     public async Task<List<TeamUsersChallenger>> GetUsersOfTeamAsync(int teamId)
