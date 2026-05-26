@@ -41,6 +41,12 @@ public class SantosAuthMiddleware
             var header = context.Request.Headers.Authorization.FirstOrDefault();
             token = header?.StartsWith("Bearer ") == true ? header[7..] : null;
         }
+        // Fallback para query string — SignalR hubs não suportam headers custom
+        if (string.IsNullOrEmpty(token))
+        {
+            token = context.Request.Query["access_token"].ToString();
+            if (string.IsNullOrEmpty(token)) token = null;
+        }
 
         if (string.IsNullOrEmpty(token))
         {

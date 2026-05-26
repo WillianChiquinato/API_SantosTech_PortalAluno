@@ -528,9 +528,9 @@ public class TeamsChallengerService : ITeamsChallengerService
                 Members = playerTeamsMounted.Select(member => new TeamsClanMemberDTO
                 {
                     UserId = member.UserId,
-                    UserName = member.User.Name,
-                    UserEmail = member.User.Email,
-                    UserAvatarUrl = member.User.ProfilePictureUrl,
+                    UserName = member.User?.Name ?? string.Empty,
+                    UserEmail = member.User?.Email ?? string.Empty,
+                    UserAvatarUrl = member.User?.ProfilePictureUrl,
                     IsCurrentUser = member.UserId == currentUserId.Value
                 }).ToList()
             };
