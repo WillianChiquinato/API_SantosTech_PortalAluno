@@ -1,5 +1,7 @@
 using API_PortalSantosTech.Interfaces;
 using API_PortalSantosTech.Interfaces.Repository;
+using API_PortalSantosTech.Middlewares;
+using API_PortalSantosTech.Models;
 using API_PortalSantosTech.Utils;
 using API_PortalSantosTech.Models.DTO;
 using API_PortalSantosTech.Services;
@@ -40,23 +42,30 @@ public class AuthController : ControllerBase
         _httpClientFactory = httpClientFactory;
     }
 
+    private async Task<User?> GetLocalUserAsync()
+    {
+        var santosUser = HttpContext.GetSantosUser();
+        if (santosUser is null) return null;
+        return await _userRepository.GetUserByEmail(santosUser.Email);
+    }
+
     [HttpGet]
     [Route("Logged")]
     public async Task<IActionResult> Logged()
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
-        if (authenticatedUserId is null)
+        var santosUser = HttpContext.GetSantosUser();
+        if (santosUser is null)
             return Unauthorized();
 
-        var user = await _userService.GetByIdAsync(authenticatedUserId.Value);
-        if (!user.Success || user.Result == null)
+        var user = await _userRepository.GetUserByEmail(santosUser.Email);
+        if (user is null)
             return Unauthorized();
 
         return Ok(new
         {
             success = true,
             errors = Array.Empty<string>(),
-            result = user.Result.ToSafeDto()
+            result = user.ToSafeDto()
         });
     }
 
@@ -183,11 +192,11 @@ public class AuthController : ControllerBase
     [Route("GetConfigs")]
     public async Task<IActionResult> GetConfigs()
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
-        if (authenticatedUserId is null)
+        var localUser = await GetLocalUserAsync();
+        if (localUser is null)
             return Unauthorized();
 
-        var user = await _userService.GetConfigsAsync(authenticatedUserId.Value);
+        var user = await _userService.GetConfigsAsync(localUser.Id);
 
         if (user == null)
             return NotFound();
@@ -199,11 +208,11 @@ public class AuthController : ControllerBase
     [Route("CreateNewConfig")]
     public async Task<IActionResult> CreateNewConfig()
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
-        if (authenticatedUserId is null)
+        var localUser = await GetLocalUserAsync();
+        if (localUser is null)
             return Unauthorized();
 
-        var response = await _userService.CreateNewConfigAsync(authenticatedUserId.Value);
+        var response = await _userService.CreateNewConfigAsync(localUser.Id);
 
         if (!response.Success)
             return BadRequest(response);
@@ -215,12 +224,12 @@ public class AuthController : ControllerBase
     [Route("UpdateConfigs")]
     public async Task<IActionResult> UpdateConfigs([FromBody] UpdateConfigRequest request)
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
-        if (authenticatedUserId is null)
+        var localUser = await GetLocalUserAsync();
+        if (localUser is null)
             return Unauthorized();
 
         // [SEC] ignore client-supplied user id and bind config updates to the authenticated user
-        request.UserId = authenticatedUserId.Value;
+        request.UserId = localUser.Id;
         var response = await _userService.UpdateConfigsAsync(request);
 
         if (!response.Success)
