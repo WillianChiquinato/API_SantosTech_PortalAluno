@@ -8,6 +8,8 @@ namespace API_PortalSantosTech.Middlewares;
 
 public class SantosAuthMiddleware
 {
+    private const string FinalChallengeHubRoute = "/hubs/final-challenge";
+
     private readonly RequestDelegate _next;
     private readonly string _jwtSecret;
     private readonly string _authApiUrl;
@@ -41,11 +43,11 @@ public class SantosAuthMiddleware
             var header = context.Request.Headers.Authorization.FirstOrDefault();
             token = header?.StartsWith("Bearer ") == true ? header[7..] : null;
         }
-        // Fallback para query string — SignalR hubs não suportam headers custom
-        if (string.IsNullOrEmpty(token))
+        // Fallback para query string apenas no hub WebSocket — query params vazam em logs/referrer
+        if (string.IsNullOrEmpty(token) && path.StartsWith(FinalChallengeHubRoute, StringComparison.OrdinalIgnoreCase))
         {
-            token = context.Request.Query["access_token"].ToString();
-            if (string.IsNullOrEmpty(token)) token = null;
+            var qs = context.Request.Query["access_token"].ToString();
+            if (!string.IsNullOrEmpty(qs)) token = qs;
         }
 
         if (string.IsNullOrEmpty(token))
