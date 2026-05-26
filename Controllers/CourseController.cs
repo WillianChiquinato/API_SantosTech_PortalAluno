@@ -1,5 +1,4 @@
 using API_PortalSantosTech.Interfaces;
-using API_PortalSantosTech.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API_PortalSantosTech.Controllers;
@@ -7,7 +6,7 @@ namespace API_PortalSantosTech.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 
-public class CourseController : ControllerBase
+public class CourseController : SantosBaseController
 {
     private readonly ICourseService _courseService;
 
@@ -52,7 +51,7 @@ public class CourseController : ControllerBase
     [Route("GetUserCourses")]
     public async Task<IActionResult> GetUserCourses()
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 

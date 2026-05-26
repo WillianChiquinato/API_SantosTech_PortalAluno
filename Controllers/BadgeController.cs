@@ -1,5 +1,4 @@
 using API_PortalSantosTech.Interfaces;
-using API_PortalSantosTech.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API_PortalSantosTech.Controllers;
@@ -7,7 +6,7 @@ namespace API_PortalSantosTech.Controllers;
 [ApiController]
 // [Authorize]
 [Route("api/[controller]")]
-public class BadgeController : ControllerBase
+public class BadgeController : SantosBaseController
 {
     private readonly IBadgeService _badgeService;
 
@@ -45,7 +44,7 @@ public class BadgeController : ControllerBase
     [Route("GetActivatedGoalsByUserAndCourseId")]
     public async Task<IActionResult> GetActivatedGoalsByUserAndCourseId([FromQuery] int courseId)
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 
@@ -58,7 +57,7 @@ public class BadgeController : ControllerBase
     [Route("UpdateActivatedGoalId")]
     public async Task<IActionResult> UpdateActivatedGoalId([FromQuery] int goalRewardId)
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 
@@ -71,7 +70,7 @@ public class BadgeController : ControllerBase
     [Route("GoalRewardOperation")]
     public async Task<IActionResult> GoalRewardOperation([FromQuery] int goalRewardId)
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 

@@ -1,6 +1,5 @@
 using API_PortalSantosTech.Interfaces;
 using API_PortalSantosTech.Models.DTO;
-using API_PortalSantosTech.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,7 +8,7 @@ namespace API_PortalSantosTech.Controllers;
 [ApiController]
 // [Authorize]
 [Route("api/[controller]")]
-public class ProgressController : ControllerBase
+public class ProgressController : SantosBaseController
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _configuration;
@@ -32,7 +31,7 @@ public class ProgressController : ControllerBase
     [Route("UpdateGoalActivedProgress")]
     public async Task<IActionResult> UpdateGoalActivedProgress([FromBody] UpdateGoalProgressRequest request)
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 
@@ -45,7 +44,7 @@ public class ProgressController : ControllerBase
     [Route("EvaluateProgress")]
     public async Task<IActionResult> EvaluateProgress([FromBody] EvaluateProgressRequest request)
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 
@@ -106,7 +105,7 @@ public class ProgressController : ControllerBase
     [Route("GetProgressUserVideos")]
     public async Task<IActionResult> GetProgressUserVideos()
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 
@@ -118,7 +117,7 @@ public class ProgressController : ControllerBase
     [Route("SaveProgressVideo")]
     public async Task<IActionResult> SaveProgressVideo([FromBody] VideoProgressDTO progressData)
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 
@@ -133,7 +132,7 @@ public class ProgressController : ControllerBase
     [Route("GetProgressUserPaidCourses")]
     public async Task<IActionResult> GetProgressUserPaidCourses()
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 

@@ -1,14 +1,13 @@
 using API_PortalSantosTech.Interfaces;
 using API_PortalSantosTech.Models;
 using API_PortalSantosTech.Models.DTO;
-using API_PortalSantosTech.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API_PortalSantosTech.Controllers;
 
 [ApiController]
 [Route("api/FinalChallenge")]
-public class TeamsChallengerController : ControllerBase
+public class TeamsChallengerController : SantosBaseController
 {
     private readonly ITeamsChallengerService _teamsChallengerService;
 
@@ -21,7 +20,8 @@ public class TeamsChallengerController : ControllerBase
     [Route("GetLiveSnapshot")]
     public async Task<IActionResult> GetLiveSnapshot([FromQuery] int eventId)
     {
-        var snapshot = await _teamsChallengerService.GetLiveSnapshotAsync(eventId, User.GetAuthenticatedUserId());
+        var authenticatedUserId = await GetLocalUserIdAsync();
+        var snapshot = await _teamsChallengerService.GetLiveSnapshotAsync(eventId, authenticatedUserId);
 
         return Ok(snapshot);
     }
@@ -30,7 +30,8 @@ public class TeamsChallengerController : ControllerBase
     [Route("GetLeaderboard")]
     public async Task<IActionResult> GetLeaderboard([FromQuery] int eventId)
     {
-        var leaderboard = await _teamsChallengerService.GetLeaderboardAsync(eventId, User.GetAuthenticatedUserId());
+        var authenticatedUserId = await GetLocalUserIdAsync();
+        var leaderboard = await _teamsChallengerService.GetLeaderboardAsync(eventId, authenticatedUserId);
 
         return Ok(leaderboard);
     }
@@ -48,7 +49,8 @@ public class TeamsChallengerController : ControllerBase
     [Route("GetActivityEvent")]
     public async Task<IActionResult> GetActivityEvent()
     {
-        var snapshot = await _teamsChallengerService.GetActivityEventAsync(User.GetAuthenticatedUserId());
+        var authenticatedUserId = await GetLocalUserIdAsync();
+        var snapshot = await _teamsChallengerService.GetActivityEventAsync(authenticatedUserId);
 
         return Ok(snapshot);
     }
@@ -66,7 +68,8 @@ public class TeamsChallengerController : ControllerBase
     [Route("SubmitAnswer")]
     public async Task<IActionResult> SubmitAnswer([FromBody] FinalChallengeAnswerRequest answerRequest)
     {
-        var result = await _teamsChallengerService.SubmitAnswerAsync(answerRequest, User.GetAuthenticatedUserId());
+        var authenticatedUserId = await GetLocalUserIdAsync();
+        var result = await _teamsChallengerService.SubmitAnswerAsync(answerRequest, authenticatedUserId);
 
         return Ok(result);
     }
@@ -75,7 +78,8 @@ public class TeamsChallengerController : ControllerBase
     [Route("GetTeamForPlayerRelationship")]
     public async Task<IActionResult> GetTeamForPlayerRelationship([FromQuery] int classId, [FromQuery] int moduleId)
     {
-        var result = await _teamsChallengerService.GetTeamForPlayerRelationship(classId, moduleId, User.GetAuthenticatedUserId());
+        var authenticatedUserId = await GetLocalUserIdAsync();
+        var result = await _teamsChallengerService.GetTeamForPlayerRelationship(classId, moduleId, authenticatedUserId);
         return Ok(result);
     }
 
@@ -83,7 +87,8 @@ public class TeamsChallengerController : ControllerBase
     [Route("JoinTeam")]
     public async Task<IActionResult> JoinTeam([FromBody] CreateTeamRequest createTeamRequest)
     {
-        var result = await _teamsChallengerService.CreateTeamAsync(createTeamRequest, User.GetAuthenticatedUserId());
+        var authenticatedUserId = await GetLocalUserIdAsync();
+        var result = await _teamsChallengerService.CreateTeamAsync(createTeamRequest, authenticatedUserId);
 
         return Ok(result);
     }
@@ -92,7 +97,8 @@ public class TeamsChallengerController : ControllerBase
     [Route("GetRankingToFinalChallenge")]
     public async Task<IActionResult> GetRankingToFinalChallenge([FromQuery] int eventId)
     {
-        var result = await _teamsChallengerService.GetRankingToFinalChallengeAsync(eventId, User.GetAuthenticatedUserId());
+        var authenticatedUserId = await GetLocalUserIdAsync();
+        var result = await _teamsChallengerService.GetRankingToFinalChallengeAsync(eventId, authenticatedUserId);
         return Ok(result);
     }
 

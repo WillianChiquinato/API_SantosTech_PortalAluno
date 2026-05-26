@@ -1,5 +1,4 @@
 using API_PortalSantosTech.Interfaces;
-using API_PortalSantosTech.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +7,7 @@ namespace API_PortalSantosTech.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize] // [SEC] all endpoints require authenticated user
-public class AnswerController : ControllerBase
+public class AnswerController : SantosBaseController
 {
     private readonly IAnswerService _answerService;
 
@@ -39,7 +38,7 @@ public class AnswerController : ControllerBase
     [Route("GetAnswersByUserId")]
     public async Task<IActionResult> GetByUserId()
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 

@@ -1,5 +1,4 @@
 using API_PortalSantosTech.Interfaces;
-using API_PortalSantosTech.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +7,7 @@ namespace API_PortalSantosTech.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize] // [SEC] class endpoints are limited to authenticated users
-public class ClassController : ControllerBase
+public class ClassController : SantosBaseController
 {
     private readonly IClassService _classService;
 
@@ -37,7 +36,7 @@ public class ClassController : ControllerBase
     [Route("GetClassByEnrollmentId")]
     public async Task<IActionResult> GetClassByEnrollmentId([FromQuery] int enrollmentId)
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 
@@ -50,7 +49,7 @@ public class ClassController : ControllerBase
     [Route("GetIslandsByUserIdAndCurrentModule")]
     public async Task<IActionResult> GetIslandsByUserIdAndCurrentModule([FromQuery] int phaseId)
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 

@@ -1,6 +1,5 @@
 using API_PortalSantosTech.Interfaces;
 using API_PortalSantosTech.Models.DTO;
-using API_PortalSantosTech.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,7 +8,7 @@ namespace API_PortalSantosTech.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize] // [SEC] exercise endpoints require an authenticated user context
-public class ExerciseController : ControllerBase
+public class ExerciseController : SantosBaseController
 {
     private readonly IExerciseService _exerciseService;
 
@@ -38,7 +37,7 @@ public class ExerciseController : ControllerBase
     [Route("GetDailyTasksForPhase")]
     public async Task<IActionResult> GetDailyTasksForPhase([FromQuery] int phaseId)
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 
@@ -69,7 +68,7 @@ public class ExerciseController : ControllerBase
         if (submission == null || submission.Count == 0)
             return BadRequest(new { Success = false, Message = "Submission data is required." });
 
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 
@@ -99,7 +98,7 @@ public class ExerciseController : ControllerBase
     [Route("VerifyExistingAnswers")]
     public async Task<IActionResult> VerifyExistingAnswers([FromQuery] int exerciseId)
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 
@@ -111,7 +110,7 @@ public class ExerciseController : ControllerBase
     [Route("GetExercisesAnsweredCategoriesByUser")]
     public async Task<IActionResult> GetExercisesAnsweredCategoriesByUser()
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 

@@ -1,5 +1,4 @@
 using API_PortalSantosTech.Services;
-using API_PortalSantosTech.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +7,7 @@ namespace API_PortalSantosTech.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize] // [SEC] AI endpoints use authenticated user context
-public class AIController : ControllerBase
+public class AIController : SantosBaseController
 {
     private readonly AIService _aiService;
 
@@ -29,7 +28,7 @@ public class AIController : ControllerBase
     [Route("GenerateExerciseRepeat")]
     public async Task<IActionResult> GenerateExerciseRepeat([FromQuery] int exerciseId, [FromQuery] int? phaseId)
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 

@@ -11,7 +11,7 @@ namespace API_PortalSantosTech.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize] // [SEC] all authenticated endpoints require JWT token
-public class UserController : ControllerBase
+public class UserController : SantosBaseController
 {
     private readonly IUserService _userService;
     private readonly TokenService _tokenService;
@@ -64,7 +64,7 @@ public class UserController : ControllerBase
     [Route("GetUserById")]
     public async Task<IActionResult> GetById([FromQuery] int id)
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 
@@ -87,7 +87,7 @@ public class UserController : ControllerBase
     [Route("GetProfileData")]
     public async Task<IActionResult> GetProfileData([FromQuery] int enrollmentId)
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 
@@ -103,7 +103,7 @@ public class UserController : ControllerBase
     [Route("UpdateUser")]
     public async Task<IActionResult> UpdateUser([FromBody] UpdateUserRequest request)
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 
@@ -116,7 +116,7 @@ public class UserController : ControllerBase
     [Route("UpdateLastSeen")]
     public async Task<IActionResult> UpdateLastSeen()
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 

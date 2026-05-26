@@ -1,6 +1,5 @@
 using API_PortalSantosTech.Interfaces;
 using API_PortalSantosTech.Models.DTO;
-using API_PortalSantosTech.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,7 +8,7 @@ namespace API_PortalSantosTech.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 // [Authorize]
-public class PointController : ControllerBase
+public class PointController : SantosBaseController
 {
     private readonly IPointService _pointService;
 
@@ -127,7 +126,7 @@ public class PointController : ControllerBase
     [Route("AddPointsForUser")]
     public async Task<IActionResult> AddPointsForUser([FromBody] AddPointsDTO redeemPoints)
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 

@@ -17,7 +17,7 @@ namespace API_PortalSantosTech.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize] // [SEC] configs and session checks require an authenticated user
-public class AuthController : ControllerBase
+public class AuthController : SantosBaseController
 {
     private readonly IUserService _userService;
     private readonly IUserRepository _userRepository;

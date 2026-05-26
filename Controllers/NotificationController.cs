@@ -1,6 +1,5 @@
 using API_PortalSantosTech.Interfaces;
 using API_PortalSantosTech.Models.DTO;
-using API_PortalSantosTech.Utils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +7,7 @@ namespace API_PortalSantosTech.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class NotificationController : ControllerBase
+public class NotificationController : SantosBaseController
 {
     private const string AdminSecretHeaderName = "x-notification-admin-secret";
 
@@ -26,7 +25,7 @@ public class NotificationController : ControllerBase
     [Route("Inbox")]
     public async Task<IActionResult> GetInbox()
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 
@@ -39,7 +38,7 @@ public class NotificationController : ControllerBase
     [Route("UnreadCount")]
     public async Task<IActionResult> GetUnreadCount()
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 
@@ -52,7 +51,7 @@ public class NotificationController : ControllerBase
     [Route("MarkAsRead")]
     public async Task<IActionResult> MarkAsRead([FromBody] NotificationMarkAsReadRequest request)
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 
@@ -65,7 +64,7 @@ public class NotificationController : ControllerBase
     [Route("MarkAllAsRead")]
     public async Task<IActionResult> MarkAllAsRead()
     {
-        var authenticatedUserId = User.GetAuthenticatedUserId();
+        var authenticatedUserId = await GetLocalUserIdAsync();
         if (authenticatedUserId is null)
             return Unauthorized();
 
