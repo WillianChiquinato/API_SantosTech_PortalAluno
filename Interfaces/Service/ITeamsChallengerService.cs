@@ -15,4 +15,5 @@ public interface ITeamsChallengerService
     Task<CustomResponse<TeamsUserChallengerDTO>> GetTeamForPlayerRelationship(int classId, int moduleId, int? currentUserId);
     Task<CustomResponse<CreateTeamRequest>> CreateTeamAsync(CreateTeamRequest createTeamRequest, int? currentUserId);
     Task<CustomResponse<IEnumerable<RankingFinalChallengeDTO>>> GetRankingToFinalChallengeAsync(int eventId, int? currentUserId);
+    Task<CustomResponse<FinalChallengerAcess>> FinalChallengeAccessAsync(int? courseId);
 }

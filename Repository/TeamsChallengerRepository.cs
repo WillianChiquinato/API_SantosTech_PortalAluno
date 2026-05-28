@@ -54,6 +54,26 @@ public class TeamsChallengerRepository : ITeamsChallengerRepository
         };
     }
 
+    public async Task<List<FinalChallengeClanRecord>?> GetClanByTeamIdAsync(List<int> teamIds)
+    {
+        var clans = await _efDbContext.FinalChallengeClans
+            .AsNoTracking()
+            .Where(x => teamIds.Contains(x.TeamId!.Value))
+            .ToListAsync();
+
+        if (clans == null || clans.Count == 0)
+            return null;
+
+        return clans.Select(clan => new FinalChallengeClanRecord
+        {
+            Id = clan.Id,
+            Name = clan.Name,
+            Motto = clan.Motto,
+            Color = clan.Color,
+            BoatName = clan.BoatName
+        }).ToList();
+    }
+
     public async Task<FinalChallengeEventRecord?> GetCurrentActivityEventAsync(int userId)
     {
         var currentEvent = await _efDbContext.FinalChallengeEvents
@@ -217,5 +237,17 @@ public class TeamsChallengerRepository : ITeamsChallengerRepository
             .Include(x => x.User)
             .Where(x => x.TeamId == teamId)
             .ToListAsync();
+    }
+
+    public async Task<FinalChallengerAcess> HasAccessToFinalChallengeAsync(int courseId)
+    {
+        var now = DateTime.UtcNow;
+
+        var hasAccess = await _efDbContext.Classes
+            .AsNoTracking()
+            .Where(c => c.EndDate >= now && c.EndDate <= now.AddDays(7) && c.CourseId == courseId)
+            .AnyAsync();
+
+        return new FinalChallengerAcess { HasAccess = hasAccess };
     }
 }

@@ -223,10 +223,12 @@ public class TeamsChallengerService : ITeamsChallengerService
                 .Where(x => memberUserIds.Contains(x.UserId) && exerciseIds.Contains(x.ExerciseId))
                 .ToListAsync();
 
-        var submissions = await _dbContext.FinalModuleSubmissions
+        var getClansWithTeamsId = await _teamsChallengerRepository.GetClanByTeamIdAsync(teamIds);
+
+        var submissions = await _dbContext.FinalChallengeSubmissions
             .AsNoTracking()
-            .Where(x => x.ModuleId == moduleId && teamIds.Contains(x.TeamId))
-            .OrderByDescending(x => x.SubmissionDate)
+            .Where(x => x.Event!.ModuleId == moduleId && getClansWithTeamsId!.Select(clan => clan.Id).Contains(x.ClanId))
+            .OrderByDescending(x => x.SubmittedAt)
             .ToListAsync();
 
         var currentUserClanId = currentUserId is null
@@ -234,7 +236,7 @@ public class TeamsChallengerService : ITeamsChallengerService
             : members.FirstOrDefault(x => x.UserId == currentUserId.Value)?.TeamId;
 
         var eventWindow = BuildEventWindow(finalChallengeEvent, teams.FirstOrDefault());
-        var teamMetrics = BuildTeamMetrics(teams, members, exercises, answers, progresses, submissions, eventWindow.StartsAt, currentUserClanId);
+        var teamMetrics = await BuildTeamMetricsAsync(teams, members, exercises, answers, progresses, submissions, eventWindow.StartsAt, currentUserClanId);
         var clans = BuildClans(teamMetrics, exercises.Count);
 
         return new ChallengeContext
@@ -284,13 +286,13 @@ public class TeamsChallengerService : ITeamsChallengerService
         };
     }
 
-    private static Dictionary<int, TeamMetric> BuildTeamMetrics(
+    private async Task<Dictionary<int, TeamMetric>> BuildTeamMetricsAsync(
         List<TeamsChallenger> teams,
         List<TeamUsersChallenger> members,
         List<Exercise> exercises,
         List<Answer> answers,
         List<ProgressExerciseStudent> progresses,
-        List<FinalModuleSubmission> submissions,
+        List<FinalChallengeSubmissionRecord> submissions,
         DateTime startsAt,
         int? currentUserClanId)
     {
@@ -303,7 +305,8 @@ public class TeamsChallengerService : ITeamsChallengerService
             var userIds = teamMembers.Select(x => x.UserId).Distinct().ToHashSet();
             var teamAnswers = answers.Where(x => userIds.Contains(x.UserId)).ToList();
             var teamProgresses = progresses.Where(x => userIds.Contains(x.UserId)).ToList();
-            var teamSubmissions = submissions.Where(x => x.TeamId == team.Id).ToList();
+
+            var teamSubmissions = submissions.Where(x => x.ClanId == submissions.FirstOrDefault()?.ClanId).ToList();
 
             var solvedExerciseIds = teamProgresses
                 .Where(x => x.IsCompleted)
@@ -321,10 +324,10 @@ public class TeamsChallengerService : ITeamsChallengerService
                     .Average();
 
             var averageAiScore = teamProgresses.Count == 0
-                ? (teamSubmissions.Count == 0 ? 0 : teamSubmissions.Average(x => x.Score))
+                ? (teamSubmissions.Count == 0 ? 0 : teamSubmissions.Average(x => x.AiScore))
                 : teamProgresses.Average(x => x.Score);
 
-            var totalScore = teamSubmissions.Sum(x => x.Score) + teamProgresses.Sum(x => x.Score);
+            var totalScore = teamSubmissions.Sum(x => x.AiScore) + teamProgresses.Sum(x => x.Score);
             var progressPercent = totalChallenges == 0 ? 0 : solvedExerciseIds.Count * 100d / totalChallenges;
             var recentStreak = teamAnswers
                 .Where(x => x.AnsweredAt.ToUniversalTime() >= DateTime.UtcNow.AddHours(-1))
@@ -340,8 +343,8 @@ public class TeamsChallengerService : ITeamsChallengerService
                 Progresses = teamProgresses,
                 Submissions = teamSubmissions,
                 SolvedExerciseIds = solvedExerciseIds,
-                TotalScore = totalScore,
-                AverageAiScore = averageAiScore,
+                TotalScore = totalScore ?? 0,
+                AverageAiScore = averageAiScore ?? 0,
                 AverageResolutionSeconds = avgResolutionSeconds,
                 ProgressPercent = progressPercent,
                 CurrentCheckpoint = openExercise?.Title ?? "Concluído",
@@ -450,12 +453,12 @@ public class TeamsChallengerService : ITeamsChallengerService
         var submissionFeed = context.Submissions.Select(submission => new FinalChallengeFeedItem
         {
             Id = $"submission-{submission.Id}",
-            ClanId = submission.TeamId,
-            ClanName = context.TeamMetrics[submission.TeamId].Team.Name,
+            ClanId = submission.ClanId,
+            ClanName = context.TeamMetrics[submission.ClanId].Team.Name,
             Type = "validated",
             Title = "Entrega validada",
-            Description = $"Pontuação {submission.Score} registrada para o módulo.",
-            HappenedAt = submission.SubmissionDate
+            Description = $"Pontuação {submission.AiScore} registrada para o módulo.",
+            HappenedAt = submission.SubmittedAt
         });
 
         var answersFeed = context.Answers
@@ -585,5 +588,14 @@ public class TeamsChallengerService : ITeamsChallengerService
             StartsAt = currentEvent.StartsAt,
             EndsAt = currentEvent.EndsAt
         });
+    }
+
+    public async Task<CustomResponse<FinalChallengerAcess>> FinalChallengeAccessAsync(int? courseId)
+    {
+        if (courseId is null)
+            return CustomResponse<FinalChallengerAcess>.Fail("Curso não especificado.");
+
+        var hasAccess = await _teamsChallengerRepository.HasAccessToFinalChallengeAsync(courseId.Value);
+        return CustomResponse<FinalChallengerAcess>.SuccessTrade(hasAccess);
     }
 }

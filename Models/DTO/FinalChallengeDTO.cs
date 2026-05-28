@@ -146,7 +146,7 @@ public sealed class ChallengeContext
     public List<Question> Questions { get; init; } = new();
     public List<Answer> Answers { get; init; } = new();
     public List<ProgressExerciseStudent> Progresses { get; init; } = new();
-    public List<FinalModuleSubmission> Submissions { get; init; } = new();
+    public List<FinalChallengeSubmissionRecord> Submissions { get; init; } = new();
     public int? CurrentUserClanId { get; init; }
     public Dictionary<int, TeamMetric> TeamMetrics { get; init; } = new();
     public List<FinalChallengeClan> Clans { get; init; } = new();
@@ -158,7 +158,7 @@ public sealed class TeamMetric
     public List<TeamUsersChallenger> Members { get; init; } = new();
     public List<Answer> Answers { get; init; } = new();
     public List<ProgressExerciseStudent> Progresses { get; init; } = new();
-    public List<FinalModuleSubmission> Submissions { get; init; } = new();
+    public List<FinalChallengeSubmissionRecord> Submissions { get; init; } = new();
     public List<int> SolvedExerciseIds { get; init; } = new();
     public double TotalScore { get; init; }
     public double AverageAiScore { get; init; }
@@ -204,4 +204,9 @@ public class RankingFinalChallengeDTO
     public double DistanceToFinishPercent { get; set; }
     public string CurrentCheckpoint { get; set; } = string.Empty;
     public int Rank { get; set; }
+}
+
+public class FinalChallengerAcess
+{
+    public bool HasAccess { get; set; }
 }

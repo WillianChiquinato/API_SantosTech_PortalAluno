@@ -23,7 +23,6 @@ public class AppDbContext : DbContext
     public DbSet<GoalStudent> GoalStudents { get; set; }
     public DbSet<UserExerciseFlow> UserExerciseFlows { get; set; }
     public DbSet<ContainerTask> ContainerTasks { get; set; }
-    public DbSet<FinalModuleSubmission> FinalModuleSubmissions { get; set; }
     public DbSet<Material> Materials { get; set; }
     public DbSet<MaterialsReferenceExercises> MaterialsReferenceExercises { get; set; }
     public DbSet<Module> Modules { get; set; }

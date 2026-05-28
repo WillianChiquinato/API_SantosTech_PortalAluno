@@ -95,4 +95,12 @@ public class TeamsChallengerController : ControllerBase
         var result = await _teamsChallengerService.GetRankingToFinalChallengeAsync(eventId, User.GetAuthenticatedUserId());
         return Ok(result);
     }
+
+    [HttpGet]
+    [Route("FinalChallengeAccess")]
+    public async Task<IActionResult> FinalChallengeAccess([FromQuery] int courseId)
+    {
+        var result = await _teamsChallengerService.FinalChallengeAccessAsync(courseId);
+        return Ok(result);
+    }
 }
