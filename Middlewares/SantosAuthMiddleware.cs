@@ -66,19 +66,20 @@ public class SantosAuthMiddleware
             return;
         }
 
-        SantosUserProfile? user;
+        // 3. Redis primeiro (tem role e suspensão corretos de uma busca anterior)
+        var user = await cache.GetAsync(userId);
 
-        if (!string.IsNullOrEmpty(emailFromToken))
+        if (user is null)
         {
-            // Fast path: email no JWT → sem I/O externo
-            user = new SantosUserProfile(userId, emailFromToken, null, emailFromToken, 0, null, null, null, null);
-        }
-        else
-        {
-            // Slow path: busca no cache ou auth service
-            user = await cache.GetAsync(userId);
-            if (user is null)
+            if (!string.IsNullOrEmpty(emailFromToken))
             {
+                // Cache frio: email no JWT evita chamada HTTP ao auth service
+                // role=0 é tradeoff aceito; corrige no próximo cache hit após slow-path
+                user = new SantosUserProfile(userId, emailFromToken, null, emailFromToken, 0, null, null, null, null);
+            }
+            else
+            {
+                // Token antigo sem email: caminho lento
                 user = await FetchFromAuthService(token);
                 if (user is null)
                 {
