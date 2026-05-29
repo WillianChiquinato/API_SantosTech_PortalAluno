@@ -141,7 +141,7 @@ public class SantosAuthMiddleware
             var req = new HttpRequestMessage(HttpMethod.Get, $"{_authApiUrl}/auth/me");
             req.Headers.Add("Cookie", $"access_token={cookieToken}");
 
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
             var res = await client.SendAsync(req, cts.Token);
 
             if (!res.IsSuccessStatusCode) return null;

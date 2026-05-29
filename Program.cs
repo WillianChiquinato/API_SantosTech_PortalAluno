@@ -63,10 +63,14 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
 {
     var opts = ConfigurationOptions.Parse(redisUrl);
     opts.AbortOnConnectFail = false;
+    opts.ConnectTimeout = 1000;   // falha rápido se Redis inacessível
+    opts.SyncTimeout    = 500;
+    opts.AsyncTimeout   = 500;
     return ConnectionMultiplexer.Connect(opts);
 });
 builder.Services.AddScoped<ISantosAuthCacheService, SantosAuthCacheService>();
-builder.Services.AddHttpClient("SantosAuth");
+builder.Services.AddHttpClient("SantosAuth")
+    .ConfigureHttpClient(c => c.Timeout = TimeSpan.FromSeconds(2));
 builder.Configuration["SantosTech:JwtSecret"] = Environment.GetEnvironmentVariable("SANTOS_TECH_JWT_SECRET");
 builder.Configuration["SantosTech:ApiUrl"] = Environment.GetEnvironmentVariable("SANTOS_TECH_API_URL");
 builder.Services.AddScoped<IEmailService, SendGridEmailService>();
