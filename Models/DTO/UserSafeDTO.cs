@@ -11,4 +11,5 @@ public class UserSafeDTO
     public string? ProfilePictureUrl { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public int? EnrollmentsId { get; set; }
 }

@@ -21,6 +21,7 @@ public class AuthController : SantosBaseController
 {
     private readonly IUserService _userService;
     private readonly IUserRepository _userRepository;
+    private readonly IEnrollmentRepository _enrollmentRepository;
     private readonly IOAuthService _oauthService;
     private readonly TokenService _tokenService;
     private readonly IConfiguration _configuration;
@@ -29,6 +30,7 @@ public class AuthController : SantosBaseController
     public AuthController(
         IUserService userService,
         IUserRepository userRepository,
+        IEnrollmentRepository enrollmentRepository,
         IOAuthService oauthService,
         TokenService tokenService,
         IConfiguration configuration,
@@ -36,6 +38,7 @@ public class AuthController : SantosBaseController
     {
         _userService = userService;
         _userRepository = userRepository;
+        _enrollmentRepository = enrollmentRepository;
         _oauthService = oauthService;
         _tokenService = tokenService;
         _configuration = configuration;
@@ -70,11 +73,15 @@ public class AuthController : SantosBaseController
             });
         }
 
+        var dto = user.ToSafeDto();
+        var enrollment = await _enrollmentRepository.GetByUserIdAsync(user.Id);
+        dto.EnrollmentsId = enrollment?.Id;
+
         return Ok(new
         {
             success = true,
             errors = Array.Empty<string>(),
-            result = user.ToSafeDto()
+            result = dto
         });
     }
 
