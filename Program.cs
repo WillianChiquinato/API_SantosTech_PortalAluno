@@ -59,7 +59,12 @@ builder.Services.AddScoped<TokenService>();
 
 // Redis + Santos Tech Auth centralizado
 var redisUrl = Environment.GetEnvironmentVariable("REDIS_URL") ?? "redis://localhost:6379";
-builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisUrl));
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+{
+    var opts = ConfigurationOptions.Parse(redisUrl);
+    opts.AbortOnConnectFail = false;
+    return ConnectionMultiplexer.Connect(opts);
+});
 builder.Services.AddScoped<ISantosAuthCacheService, SantosAuthCacheService>();
 builder.Services.AddHttpClient("SantosAuth");
 builder.Configuration["SantosTech:JwtSecret"] = Environment.GetEnvironmentVariable("SANTOS_TECH_JWT_SECRET");
