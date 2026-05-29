@@ -57,8 +57,8 @@ public class SantosAuthMiddleware
             return;
         }
 
-        // 2. Valida JWT localmente (rápido, sem I/O)
-        var userId = ValidateJwt(token);
+        // 2. Valida JWT e extrai claims
+        var (userId, emailFromToken) = ParseJwtClaims(token);
         if (userId is null)
         {
             context.Response.StatusCode = 401;
@@ -66,20 +66,28 @@ public class SantosAuthMiddleware
             return;
         }
 
-        // 3. Cache Redis
-        var user = await cache.GetAsync(userId);
+        SantosUserProfile? user;
 
-        // 4. Cache miss → busca no auth service centralizado
-        if (user is null)
+        if (!string.IsNullOrEmpty(emailFromToken))
         {
-            user = await FetchFromAuthService(token);
+            // Fast path: email no JWT → sem I/O externo
+            user = new SantosUserProfile(userId, emailFromToken, null, emailFromToken, 0, null, null, null, null);
+        }
+        else
+        {
+            // Slow path: busca no cache ou auth service
+            user = await cache.GetAsync(userId);
             if (user is null)
             {
-                context.Response.StatusCode = 401;
-                await context.Response.WriteAsJsonAsync(new { code = "UNAUTHORIZED", message = "Sessão inválida" });
-                return;
+                user = await FetchFromAuthService(token);
+                if (user is null)
+                {
+                    context.Response.StatusCode = 401;
+                    await context.Response.WriteAsJsonAsync(new { code = "UNAUTHORIZED", message = "Sessão inválida" });
+                    return;
+                }
+                await cache.SetAsync(user);
             }
-            await cache.SetAsync(user);
         }
 
         // 5. Conta suspensa
@@ -96,7 +104,7 @@ public class SantosAuthMiddleware
         await _next(context);
     }
 
-    private string? ValidateJwt(string token)
+    private (string? userId, string? email) ParseJwtClaims(string token)
     {
         var handler = new JwtSecurityTokenHandler();
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecret));
@@ -114,10 +122,15 @@ public class SantosAuthMiddleware
                 ValidAlgorithms = ["HS256"],
             }, out var validated);
 
-            return ((JwtSecurityToken)validated).Subject;
+            var jwt = (JwtSecurityToken)validated;
+            var email = jwt.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+            return (jwt.Subject, email);
         }
-        catch { return null; }
+        catch { return (null, null); }
     }
+
+    // Keep for compatibility
+    private string? ValidateJwt(string token) => ParseJwtClaims(token).userId;
 
     private async Task<SantosUserProfile?> FetchFromAuthService(string cookieToken)
     {
