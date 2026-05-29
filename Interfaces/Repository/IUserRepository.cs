@@ -6,6 +6,7 @@ namespace API_PortalSantosTech.Interfaces.Repository;
 public interface IUserRepository
 {
     Task<User?> GetUserByEmail(string email);
+    Task<User> CreateAsync(User user);
     Task<List<User>> GetAllAsync();
     Task<User?> GetByIdAsync(int id);
     Task<UserIdentity?> GetUserIdentityAsync(string provider, string providerUserId);

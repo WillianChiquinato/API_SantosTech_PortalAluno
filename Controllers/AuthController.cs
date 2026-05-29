@@ -58,8 +58,17 @@ public class AuthController : SantosBaseController
             return Unauthorized();
 
         var user = await _userRepository.GetUserByEmail(santosUser.Email);
+
+        // Primeiro login: provisiona o usuário no portal automaticamente
         if (user is null)
-            return Unauthorized();
+        {
+            user = await _userRepository.CreateAsync(new User
+            {
+                Email = santosUser.Email,
+                Name  = santosUser.Name != santosUser.Email ? santosUser.Name : santosUser.Email.Split('@')[0],
+                Role  = UserRole.Student,
+            });
+        }
 
         return Ok(new
         {

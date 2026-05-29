@@ -66,6 +66,15 @@ public class UserRepository : IUserRepository
             .SumAsync(up => up.Points);
     }
 
+    public async Task<User> CreateAsync(User user)
+    {
+        user.CreatedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.UtcNow;
+        _efDbContext.Users.Add(user);
+        await _efDbContext.SaveChangesAsync();
+        return user;
+    }
+
     public async Task<User> UpdateUserAsync(User user)
     {
         _efDbContext.Users.Update(user);
