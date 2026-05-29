@@ -68,11 +68,15 @@ public class UserRepository : IUserRepository
 
     public async Task<User> CreateAsync(User user)
     {
-        user.CreatedAt = DateTime.UtcNow;
-        user.UpdatedAt = DateTime.UtcNow;
-        _efDbContext.Users.Add(user);
-        await _efDbContext.SaveChangesAsync();
-        return user;
+        // ON CONFLICT DO NOTHING garante idempotência — sem duplicatas mesmo com requests concorrentes
+        await _efDbContext.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+            INSERT INTO "user" (email, name, role, created_at, updated_at)
+            VALUES ({user.Email}, {user.Name}, {(int)user.Role}, NOW(), NOW())
+            ON CONFLICT (email) DO NOTHING
+            """);
+
+        return (await GetUserByEmail(user.Email))!;
     }
 
     public async Task<User> UpdateUserAsync(User user)
