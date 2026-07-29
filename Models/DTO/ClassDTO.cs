@@ -13,6 +13,7 @@ public class ClassRoomDTO
 public class ClassCoursesDTO
 {
     public int Id { get; set; }
+    public string ClassType { get; set; } = string.Empty;
     public string ClassName { get; set; } = string.Empty;
     public DateTime ClassStartedAt { get; set; }
     public DateTime ClassFinishedAt { get; set; }

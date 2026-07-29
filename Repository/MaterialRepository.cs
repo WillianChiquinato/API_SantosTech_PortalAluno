@@ -20,6 +20,11 @@ public class MaterialRepository : IMaterialRepository
             .Include(e => e.Class)
             .FirstOrDefaultAsync(e => e.Id == enrollmentId);
 
+        if (courseByEnrollment!.Class!.IndividualClass)
+        {
+            return await _efDbContext.Materials.AsNoTracking().ToListAsync();
+        }
+
         return await _efDbContext.Materials.AsNoTracking().Where(x => x.CourseId == courseByEnrollment!.Class!.CourseId).ToListAsync();
     }
 

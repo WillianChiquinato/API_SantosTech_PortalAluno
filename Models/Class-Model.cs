@@ -17,6 +17,9 @@ public class Class
     [Column("course_id")]
     public int CourseId { get; set; }
 
+    [Column("individual_class")]
+    public bool IndividualClass { get; set; }
+
     [Column("name")]
     public string? Name { get; set; }
 

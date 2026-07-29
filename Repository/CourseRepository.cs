@@ -49,6 +49,7 @@ public class CourseRepository : ICourseRepository
             .Select(e => new ClassCoursesDTO
             {
                 Id = e.Id,
+                ClassType = e.Class.IndividualClass ? "Individual" : "Turma Aberta",
                 ClassName = e.Class.Name,
                 ClassStartedAt = e.Class.StartDate,
                 ClassFinishedAt = e.Class.EndDate,
